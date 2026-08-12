@@ -25,6 +25,8 @@ Set-ExecutionPolicy -Scope Process Bypass
 The script downloads and hash-verifies pinned Neovim 0.12.4 and LLVM-MinGW,
 creates an isolated Python environment, checks out immutable component commits,
 then runs the complete flow. It does not modify your normal Neovim profile.
+Network-backed plugin and parser stages use bounded retries; every failed
+attempt remains in the evidence logs.
 
 For the full 10-sample benchmark:
 

@@ -888,8 +888,10 @@ class Lane:
         *,
         fixture_file: Path | None = None,
         timeout: int | None = None,
+        check: bool = True,
     ) -> dict[str, Any]:
         output = self.artifacts / output_name
+        output.unlink(missing_ok=True)
         probe_env = self.env.copy()
         probe_env["LVB_E2E_OUTPUT"] = str(output)
         probe_env["LVB_E2E_PROBE"] = str(SCRIPT_DIR / "probes" / script)
@@ -897,7 +899,14 @@ class Lane:
         if fixture_file:
             command.append(fixture_file)
         command.extend(("-c", "lua dofile(vim.env.LVB_E2E_PROBE)"))
-        self.run_stage(stage, command, cwd=self.fixture, timeout=timeout, env=probe_env)
+        self.run_stage(
+            stage,
+            command,
+            cwd=self.fixture,
+            timeout=timeout,
+            env=probe_env,
+            check=check,
+        )
         if not output.is_file():
             raise LaneError(f"Probe {stage} did not produce {output}")
         return read_json(output) if output.suffix == ".json" else {"path": str(output)}
@@ -990,27 +999,39 @@ class Lane:
         return result
 
     def run_treesitter(self) -> dict[str, Any]:
-        result = self.run_probe(
-            "treesitter-readiness",
-            "treesitter_readiness.lua",
-            "treesitter-readiness.json",
-            timeout=self.args.timeout + 60,
-        )
-        parser_results = result.get("results", {})
-        requested_ok = all(
-            parser_results.get(parser, {}).get("installed") is True
-            and parser_results.get(parser, {}).get("load_ok") is True
-            for parser in DEFAULT_PARSERS
-        )
-        dependencies = result.get("dependencies", {})
-        if (
-            result.get("completed") is not True
-            or result.get("task_ok") is not True
-            or not requested_ok
-            or "dtd" not in dependencies
-            or dependencies["dtd"].get("load_ok") is not True
-        ):
-            raise LaneError("The frozen 23-parser readiness contract failed")
+        result: dict[str, Any] = {}
+        passed = False
+        attempts = self.args.network_retries + 1
+        for attempt in range(1, attempts + 1):
+            result = self.run_probe(
+                f"treesitter-readiness-attempt-{attempt}",
+                "treesitter_readiness.lua",
+                "treesitter-readiness.json",
+                timeout=self.args.timeout + 60,
+                check=False,
+            )
+            parser_results = result.get("results", {})
+            requested_ok = all(
+                parser_results.get(parser, {}).get("installed") is True
+                and parser_results.get(parser, {}).get("load_ok") is True
+                for parser in DEFAULT_PARSERS
+            )
+            dependencies = result.get("dependencies", {})
+            passed = (
+                result.get("completed") is True
+                and result.get("task_ok") is True
+                and requested_ok
+                and "dtd" in dependencies
+                and dependencies["dtd"].get("load_ok") is True
+            )
+            if passed:
+                break
+            if attempt < attempts:
+                time.sleep(min(2**attempt, 10))
+        if not passed:
+            raise LaneError(
+                f"The frozen 23-parser readiness contract failed after {attempts} attempts"
+            )
         if self.args.lane == "windows":
             preflight = result.get("preflight") or {}
             compiler = preflight.get("compiler") or {}
