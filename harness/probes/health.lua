@@ -1,0 +1,10 @@
+local output = assert(vim.env.LVB_E2E_OUTPUT, "LVB_E2E_OUTPUT is required")
+
+pcall(function()
+  require("lazy").load({ plugins = { "mason.nvim", "nvim-treesitter" } })
+end)
+vim.cmd("checkhealth lazyvim mason nvim-treesitter")
+vim.defer_fn(function()
+  vim.fn.writefile(vim.api.nvim_buf_get_lines(0, 0, -1, false), output)
+  vim.cmd("qa!")
+end, 3000)

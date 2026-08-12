@@ -1,0 +1,1833 @@
+{
+  "components": {
+    "bee.lua": {
+      "branch": "crutkas-windows-arm64-support",
+      "commit": "5cdaaea78b7f44c01d8cf0f772e8479afd616a80",
+      "pull_request": "https://github.com/crutkas/bee.lua/pull/1",
+      "repository": "crutkas/bee.lua"
+    },
+    "lazyvim": {
+      "branch": "crutkas-windows-arm64-compiler",
+      "commit": "0d773f3cb86706e101733f5ff2ef5c36d821ddd2",
+      "pull_request": "https://github.com/crutkas/LazyVim/pull/1",
+      "repository": "crutkas/LazyVim"
+    },
+    "lua-language-server": {
+      "asset": "https://github.com/crutkas/lua-language-server/releases/download/arm64-e2e-20260812-luals/lua-language-server-3.19.0-win32-arm64.zip",
+      "branch": "crutkas-windows-arm64-luals",
+      "commit": "11db71d7763570e6ae33218e99dbd957865bfe98",
+      "pe_machine": "0xAA64",
+      "pull_request": "https://github.com/crutkas/lua-language-server/pull/1",
+      "release": "https://github.com/crutkas/lua-language-server/releases/tag/arm64-e2e-20260812-luals",
+      "repository": "crutkas/lua-language-server",
+      "sha256": "e79fe25dc91e049b4406a26bfd35716dec8434eb141411d71848105223f1b624"
+    },
+    "mason-registry": {
+      "branch": "crutkas-add-tree-sitter-arm64",
+      "commit": "32cfcb4d16a4a3942ac2daa703479ef261b0f023",
+      "e2e_branch": "crutkas-arm64-e2e-registry",
+      "e2e_commit": "75a6e0ebca221321cf154f169f56873749dd0d17",
+      "e2e_only": true,
+      "e2e_pull_request": "https://github.com/crutkas/mason-registry/pull/2",
+      "pull_request": "https://github.com/crutkas/mason-registry/pull/1",
+      "repository": "crutkas/mason-registry"
+    },
+    "nvim-treesitter": {
+      "branch": "crutkas-fix-windows-parser-install",
+      "commit": "61c17a841e9295716e441a42d88c93431a100890",
+      "pull_request": "https://github.com/crutkas/nvim-treesitter/pull/1",
+      "repository": "crutkas/nvim-treesitter"
+    },
+    "shfmt": {
+      "asset": "https://github.com/crutkas/sh/releases/download/arm64-e2e-20260812-shfmt/shfmt_v3.13.1_windows_arm64.exe",
+      "branch": "crutkas-windows-arm64-release",
+      "commit": "8297faffcb1bb7e7b332d44fb96afe1a88e19e99",
+      "pe_machine": "0xAA64",
+      "pull_request": "https://github.com/crutkas/sh/pull/1",
+      "release": "https://github.com/crutkas/sh/releases/tag/arm64-e2e-20260812-shfmt",
+      "repository": "crutkas/sh",
+      "sha256": "1B6E6CD8E1142951E72412E527A6ED97DE3908B9B212FDD147CBD93399F2D355"
+    },
+    "stylua": {
+      "asset": "https://github.com/crutkas/StyLua/releases/download/arm64-e2e-20260812-stylua/stylua-windows-aarch64.zip",
+      "branch": "crutkas-windows-arm64-release",
+      "commit": "1aedf8bbaac4b1fb5a4bd51e9e93c52548b32f31",
+      "pe_machine": "0xAA64",
+      "pull_request": "https://github.com/crutkas/StyLua/pull/1",
+      "release": "https://github.com/crutkas/StyLua/releases/tag/arm64-e2e-20260812-stylua",
+      "repository": "crutkas/StyLua",
+      "sha256": "A69DA76852134633197AAE03D17BF05ABAB1E4CB16824E44B3FC3B1AD133F104"
+    }
+  },
+  "excluded": {
+    "windows": {
+      "accepted_metrics": false,
+      "attempts": {
+        "online-attempt-1": "Three HTTPS starter retries failed because an inherited GIT_EXEC_PATH pointed the provisioned Git at a different helper tree.",
+        "online-attempt-2": "The online bootstrap reached current branch heads for three plugins instead of their frozen lock commits; this attempt predated lock reconciliation.",
+        "online-attempt-3": "Reached all 32 exact commits and passed functional gates after Lazy restore, but Git HTTPS executed the bundled x64 sh.exe; no online metric is accepted.",
+        "preseeded-repetition-1": "The first preseeded probe installed all parser files but did not add the nvim-treesitter site directory to that probe's runtimepath before load validation.",
+        "repetition-1": "Frozen starter bare cache contained missing historical blobs.",
+        "repetition-10": "Functionally passed, but frozen-cache file transport invoked Git's bundled x64 sh.exe.",
+        "repetition-11": "Functionally passed, but frozen-cache file transport invoked Git's bundled x64 sh.exe.",
+        "repetition-12": "Functionally passed, but frozen-cache file transport invoked Git's bundled x64 sh.exe.",
+        "repetition-2": "Harness initially rejected lazy.nvim branch-label normalization despite exact commits.",
+        "repetition-3": "The first native yq bridge invocation was quoted incorrectly.",
+        "repetition-4": "The yq compatibility reader initially decoded UTF-8 registry input with the Windows console encoding.",
+        "repetition-5": "The preflight probe initially encoded unset Lua environment fields as an array.",
+        "repetition-6": "The standalone LuaLS client initially left stdin open after the LSP exit notification.",
+        "repetition-7": "The first recursive architecture policy mixed dormant multi-architecture distribution payloads with active E2E-installed binaries.",
+        "repetition-8": "The first LazyVim attachment probe required an unnecessarily synchronous client-stop observation.",
+        "repetition-9": "Functionally passed, but frozen-cache file transport invoked Git's bundled x64 sh.exe."
+      },
+      "reason": "No startup, setup, maintenance, or ratio metric from these attempts is accepted.",
+      "schema_version": 1
+    },
+    "wsl": {
+      "attempts": [
+        {
+          "accepted": false,
+          "path": "contaminated-repetition-1",
+          "reason": "The run inherited /mnt/c/Users/crutkas/source/lazyvim-bench/lazyvim-bench as its process working directory and then failed during the explicit Mason target probe. No timing from this attempt is accepted."
+        },
+        {
+          "accepted": false,
+          "path": "contaminated-repetition-2",
+          "reason": "The harness, fixtures, sources, cache, tools, and runtime paths were under /root, but the process inherited a /mnt/c working directory. git-trace.jsonl records that Windows-mounted worktree, so all correctness and timing results from this attempt are excluded."
+        }
+      ],
+      "schema_version": 1
+    }
+  },
+  "generated_at": "2026-08-12T20:53:41.753647+00:00",
+  "lock": {
+    "after_path": "arm64-e2e/lazy-lock-e2e.json",
+    "after_sha256": "41525e97d86a539a817295973026fabf9d38eb2e7b82baaad15e47499220ac3d",
+    "before_path": "fixtures/lazy-lock.json",
+    "before_sha256": "2afde58236bdfeda9efbe4936a6a8f295066362e7c9e8c1d542fd052d0aa4134",
+    "delta": {
+      "LazyVim": {
+        "after": {
+          "branch": "main",
+          "commit": "0d773f3cb86706e101733f5ff2ef5c36d821ddd2"
+        },
+        "before": {
+          "branch": "main",
+          "commit": "c10948c50b18fae7f256433afdef09e432410480"
+        }
+      },
+      "nvim-treesitter": {
+        "after": {
+          "branch": "main",
+          "commit": "61c17a841e9295716e441a42d88c93431a100890"
+        },
+        "before": {
+          "branch": "main",
+          "commit": "c9f9ed6c1892f629ea399f4ee7905f2686fa13f2"
+        }
+      }
+    },
+    "plugins": 32
+  },
+  "online_attempt": {
+    "accepted": false,
+    "exact_plugins_after_restore": 32,
+    "path": "runs/win-arm64-e2e-final/excluded/online-attempt-3",
+    "reason": "Git HTTPS executed bundled x64 sh.exe; no setup or startup metric from this attempt is accepted.",
+    "shell_ancestry_count": 341
+  },
+  "prior_control": {
+    "historical_cached_bootstrap": {
+      "notes": [
+        "Same physical ARM64 device.",
+        "Windows cache and work roots are NTFS; WSL cache and work roots are ext4 under /root.",
+        "All samples retained; the first Windows sample is a cold-cache outlier.",
+        "No Defender exclusion or Dev Drive variant was applied."
+      ],
+      "scenarios": {
+        "windows": {
+          "iqr_seconds": 1.8244851999952516,
+          "max_seconds": 137.08253679999325,
+          "median_seconds": 13.01919839999755,
+          "min_seconds": 12.26388439999937,
+          "p95_seconds": 137.08253679999325,
+          "q1_seconds": 12.343584100002772,
+          "q3_seconds": 14.168069299998024,
+          "runs": [
+            {
+              "filesystem": "windows",
+              "label": "windows-arm64-frozen-cache-default",
+              "machine": "ARM64",
+              "seconds": 137.08253679999325,
+              "summary": "C:\\lvb-a64\\win-arm64-final\\artifacts\\cached-bootstrap-initial\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "windows",
+              "label": "cache-win-arm64-2",
+              "machine": "ARM64",
+              "seconds": 14.168069299998024,
+              "summary": "C:\\lvb-a64\\cache-win-arm64-2\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "windows",
+              "label": "cache-win-arm64-3",
+              "machine": "ARM64",
+              "seconds": 12.343584100002772,
+              "summary": "C:\\lvb-a64\\cache-win-arm64-3\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "windows",
+              "label": "cache-win-arm64-4",
+              "machine": "ARM64",
+              "seconds": 12.26388439999937,
+              "summary": "C:\\lvb-a64\\cache-win-arm64-4\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "windows",
+              "label": "cache-win-arm64-5",
+              "machine": "ARM64",
+              "seconds": 13.01919839999755,
+              "summary": "C:\\lvb-a64\\cache-win-arm64-5\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            }
+          ],
+          "samples_seconds": [
+            137.08253679999325,
+            14.168069299998024,
+            12.343584100002772,
+            12.26388439999937,
+            13.01919839999755
+          ]
+        },
+        "wsl": {
+          "iqr_seconds": 0.34665320100000097,
+          "max_seconds": 1.8865455899999688,
+          "median_seconds": 1.539565875000008,
+          "min_seconds": 1.434726229000006,
+          "p95_seconds": 1.8865455899999688,
+          "q1_seconds": 1.5374631749999992,
+          "q3_seconds": 1.8841163760000001,
+          "runs": [
+            {
+              "filesystem": "wsl-linux",
+              "label": "wsl2-arm64-linux-home-frozen-final",
+              "machine": "aarch64",
+              "seconds": 1.8865455899999688,
+              "summary": "\\\\wsl.localhost\\ubuntu\\root\\lvb-arm64\\wsl-arm64-final\\artifacts\\initial\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "wsl-linux",
+              "label": "cache-wsl-arm64-2",
+              "machine": "aarch64",
+              "seconds": 1.8841163760000001,
+              "summary": "\\\\wsl.localhost\\ubuntu\\root\\lvb-arm64\\cache-wsl-arm64-2\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "wsl-linux",
+              "label": "cache-wsl-arm64-3",
+              "machine": "aarch64",
+              "seconds": 1.5374631749999992,
+              "summary": "\\\\wsl.localhost\\ubuntu\\root\\lvb-arm64\\cache-wsl-arm64-3\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "wsl-linux",
+              "label": "cache-wsl-arm64-4",
+              "machine": "aarch64",
+              "seconds": 1.539565875000008,
+              "summary": "\\\\wsl.localhost\\ubuntu\\root\\lvb-arm64\\cache-wsl-arm64-4\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            },
+            {
+              "filesystem": "wsl-linux",
+              "label": "cache-wsl-arm64-5",
+              "machine": "aarch64",
+              "seconds": 1.434726229000006,
+              "summary": "\\\\wsl.localhost\\ubuntu\\root\\lvb-arm64\\cache-wsl-arm64-5\\summary.json",
+              "valid_frozen_graph": true,
+              "valid_plugins": 32
+            }
+          ],
+          "samples_seconds": [
+            1.8865455899999688,
+            1.8841163760000001,
+            1.5374631749999992,
+            1.539565875000008,
+            1.434726229000006
+          ]
+        }
+      },
+      "schema_version": 1,
+      "windows_over_wsl_median_ratio": 8.456408791210366
+    },
+    "supported_defaults": {
+      "frozen_plugins": "32/32",
+      "luals_attach": false,
+      "mason": "four win_arm64 targets missing",
+      "signoff": "expected failure"
+    },
+    "tree_sitter_only_partial": {
+      "acceptance": {
+        "all_default_tools": false,
+        "json_parser": true,
+        "lua_ls_attached": false,
+        "tree_sitter_exec": true
+      },
+      "exact_frozen_graph": true,
+      "native_parser_pe": {
+        "all_arm64": true,
+        "count": 24
+      },
+      "signoff": "partial: native tree-sitter and parsers pass; StyLua, shfmt, and LuaLS have no win_arm64 target",
+      "startup": {
+        "empty": {
+          "iqr_seconds": 0.0055044249984348426,
+          "median_seconds": 0.0812645000005432,
+          "p95_seconds": 0.09585879999940516,
+          "q1_seconds": 0.07972587500080408,
+          "q3_seconds": 0.08523029999923892,
+          "samples_seconds": [
+            0.07925859999886598,
+            0.08429760000217357,
+            0.09585879999940516,
+            0.08554119999826071,
+            0.07898310000018682,
+            0.08049650000248221,
+            0.08138120000148774,
+            0.0794690000002447,
+            0.08724549999897135,
+            0.08114779999959865
+          ]
+        },
+        "file": {
+          "iqr_seconds": 0.011901974998181686,
+          "median_seconds": 0.22248889999900712,
+          "p95_seconds": 0.23641180000049644,
+          "q1_seconds": 0.21704065000267292,
+          "q3_seconds": 0.2289426250008546,
+          "samples_seconds": [
+            0.21936040000218782,
+            0.22704280000107246,
+            0.23641180000049644,
+            0.22169239999857382,
+            0.21215510000183713,
+            0.23359390000041458,
+            0.21626740000283462,
+            0.22328539999944041,
+            0.22957590000078198,
+            0.21592410000084783
+          ]
+        }
+      },
+      "work_root": "C:\\lvb-a64\\win-arm64-final"
+    }
+  },
+  "ratios": {
+    "windows_over_wsl_empty_startup": 2.820955003593027,
+    "windows_over_wsl_file_startup": 3.252333048539544
+  },
+  "schema_version": 1,
+  "scope_note": "The blocker-first E2E work targeted correctness. Plugin-bootstrap performance was not a target, and normal clean online plugin-install timing is unmeasured.",
+  "status": "passed_preseeded_correctness_online_setup_unmeasured",
+  "windows": {
+    "accepted_runs": [
+      "preseeded-repetition-2",
+      "preseeded-repetition-3",
+      "preseeded-repetition-4"
+    ],
+    "architecture": {
+      "e2e_installed_scope_counts": {
+        "mason": 4,
+        "parsers": 24,
+        "plugins": 0,
+        "pyyaml": 1,
+        "support": 1
+      },
+      "expected": {
+        "architecture": "arm64",
+        "format": "PE",
+        "machine": "0xAA64"
+      },
+      "parser_count": 24,
+      "parser_native_count": 24,
+      "passed": true,
+      "provisioned_distribution_foreign_count": 560,
+      "provisioned_distribution_note": "Retained diagnostic inventory of dormant multi-architecture payloads in the provisioned distributions; only resolved executables and recursively installed E2E payloads are eligible for the no-emulation sign-off gate.",
+      "wrong_architecture": []
+    },
+    "correctness": {
+      "architecture": true,
+      "formatters": true,
+      "git_no_emulation": true,
+      "health": true,
+      "lazyvim_luals_attachment": true,
+      "luals_protocol": true,
+      "mason": true,
+      "plugin_lock": true,
+      "preflight": true,
+      "treesitter": true
+    },
+    "git_execution": {
+      "all_passed": true,
+      "event_counts": [
+        3996,
+        3978,
+        3970
+      ],
+      "shell_ancestry_count": 0,
+      "shell_child_count": 0,
+      "wrong_architecture_count": 0
+    },
+    "maintenance": {
+      "count": 3,
+      "iqr_seconds": 0.002048599999397993,
+      "max_seconds": 0.132623199999216,
+      "median_seconds": 0.1303007999958936,
+      "min_seconds": 0.12852600000042003,
+      "p95_seconds": 0.132623199999216,
+      "q1_seconds": 0.12941339999815682,
+      "q3_seconds": 0.1314619999975548,
+      "samples_seconds": [
+        0.12852600000042003,
+        0.1303007999958936,
+        0.132623199999216
+      ]
+    },
+    "mason_install_durations": {
+      "lua-language-server": {
+        "count": 3,
+        "iqr_seconds": 0.2743921999999994,
+        "max_seconds": 4.3044267,
+        "median_seconds": 3.8323443999999998,
+        "min_seconds": 3.7556423,
+        "p95_seconds": 4.3044267,
+        "q1_seconds": 3.79399335,
+        "q3_seconds": 4.0683855499999995,
+        "samples_seconds": [
+          3.7556423,
+          4.3044267,
+          3.8323443999999998
+        ]
+      },
+      "shfmt": {
+        "count": 3,
+        "iqr_seconds": 0.10645409999999994,
+        "max_seconds": 0.6046319,
+        "median_seconds": 0.483429,
+        "min_seconds": 0.3917237,
+        "p95_seconds": 0.6046319,
+        "q1_seconds": 0.43757635,
+        "q3_seconds": 0.5440304499999999,
+        "samples_seconds": [
+          0.3917237,
+          0.6046319,
+          0.483429
+        ]
+      },
+      "stylua": {
+        "count": 3,
+        "iqr_seconds": 0.17071900000000007,
+        "max_seconds": 1.1984319,
+        "median_seconds": 0.924944,
+        "min_seconds": 0.8569939000000001,
+        "p95_seconds": 1.1984319,
+        "q1_seconds": 0.89096895,
+        "q3_seconds": 1.06168795,
+        "samples_seconds": [
+          0.8569939000000001,
+          1.1984319,
+          0.924944
+        ]
+      },
+      "tree-sitter-cli": {
+        "count": 3,
+        "iqr_seconds": 0.0808494500000001,
+        "max_seconds": 1.0901802,
+        "median_seconds": 1.0852491,
+        "min_seconds": 0.9284813000000001,
+        "p95_seconds": 1.0901802,
+        "q1_seconds": 1.0068652,
+        "q3_seconds": 1.0877146500000001,
+        "samples_seconds": [
+          0.9284813000000001,
+          1.0852491,
+          1.0901802
+        ]
+      }
+    },
+    "receipts": {
+      "lua-language-server": {
+        "path": "runs/win-arm64-e2e-final/preseeded-repetition-3/mason-receipts/lua-language-server.json",
+        "sha256": "947712b538bc445d1b5399599e5a570938ee0bc8dbdee60fec9fbd2f0920c1c2",
+        "source": {
+          "id": "pkg:github/crutkas/lua-language-server@arm64-e2e-20260812-luals",
+          "raw": {
+            "asset": [
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-darwin-arm64.tar.gz:libexec/",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-darwin-x64.tar.gz:libexec/",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-arm64.tar.gz:libexec/",
+                "target": "linux_arm64_gnu"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-x64.tar.gz:libexec/",
+                "target": "linux_x64_gnu"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-x64-musl.tar.gz:libexec/",
+                "target": "linux_x64_musl"
+              },
+              {
+                "bin": "bin/lua-language-server.exe",
+                "file": "lua-language-server-{{version}}-win32-x64.zip",
+                "target": "win_x64"
+              },
+              {
+                "bin": "bin/lua-language-server.exe",
+                "file": "lua-language-server-3.19.0-win32-arm64.zip",
+                "target": "win_arm64"
+              }
+            ],
+            "id": "pkg:github/crutkas/lua-language-server@arm64-e2e-20260812-luals"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "shfmt": {
+        "path": "runs/win-arm64-e2e-final/preseeded-repetition-3/mason-receipts/shfmt.json",
+        "sha256": "e42d8aca3957064dcefa20ab15305b748ce4731a01b644eabfc87ed1626ed69a",
+        "source": {
+          "id": "pkg:github/crutkas/sh@arm64-e2e-20260812-shfmt",
+          "raw": {
+            "asset": [
+              {
+                "file": "shfmt_{{version}}_darwin_arm64",
+                "target": "darwin_arm64"
+              },
+              {
+                "file": "shfmt_{{version}}_darwin_amd64",
+                "target": "darwin_x64"
+              },
+              {
+                "file": "shfmt_{{version}}_linux_arm64",
+                "target": "linux_arm64"
+              },
+              {
+                "file": "shfmt_{{version}}_linux_amd64",
+                "target": "linux_x64"
+              },
+              {
+                "file": "shfmt_{{version}}_windows_386.exe",
+                "target": "win_x86"
+              },
+              {
+                "file": "shfmt_{{version}}_windows_amd64.exe",
+                "target": "win_x64"
+              },
+              {
+                "file": "shfmt_v3.13.1_windows_arm64.exe",
+                "target": "win_arm64"
+              }
+            ],
+            "id": "pkg:github/crutkas/sh@arm64-e2e-20260812-shfmt"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "stylua": {
+        "path": "runs/win-arm64-e2e-final/preseeded-repetition-3/mason-receipts/stylua.json",
+        "sha256": "ebb8e793f39c6594a4e175423f97062476cf9fba59cdfc95208fa4ea5f3558e9",
+        "source": {
+          "id": "pkg:github/crutkas/stylua@arm64-e2e-20260812-stylua",
+          "raw": {
+            "asset": [
+              {
+                "bin": "stylua",
+                "file": "stylua-macos-aarch64.zip",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-macos-x86_64.zip",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-x86_64.zip",
+                "target": "linux_x64_gnu"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-aarch64.zip",
+                "target": "linux_arm64_gnu"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-x86_64-musl.zip",
+                "target": "linux_x64"
+              },
+              {
+                "bin": "stylua.exe",
+                "file": "stylua-windows-x86_64.zip",
+                "target": "win_x64"
+              },
+              {
+                "bin": "stylua.exe",
+                "file": "stylua-windows-aarch64.zip",
+                "target": "win_arm64"
+              }
+            ],
+            "id": "pkg:github/crutkas/StyLua@arm64-e2e-20260812-stylua"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "tree-sitter-cli": {
+        "path": "runs/win-arm64-e2e-final/preseeded-repetition-3/mason-receipts/tree-sitter-cli.json",
+        "sha256": "d4575163196d0ae8f016c1e3e373d6ecad873d0cdd2251394998468a081bd4e5",
+        "source": {
+          "id": "pkg:github/tree-sitter/tree-sitter@v0.26.12",
+          "raw": {
+            "asset": [
+              {
+                "bin": "tree-sitter-macos-x64",
+                "file": "tree-sitter-macos-x64.gz",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "tree-sitter-macos-arm64",
+                "file": "tree-sitter-macos-arm64.gz",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "tree-sitter-linux-x64",
+                "file": "tree-sitter-linux-x64.gz",
+                "target": "linux_x64"
+              },
+              {
+                "bin": "tree-sitter-linux-x86",
+                "file": "tree-sitter-linux-x86.gz",
+                "target": "linux_x86"
+              },
+              {
+                "bin": "tree-sitter-linux-arm64",
+                "file": "tree-sitter-linux-arm64.gz",
+                "target": "linux_arm64"
+              },
+              {
+                "bin": "tree-sitter.exe",
+                "file": "tree-sitter-cli-windows-x64.zip",
+                "target": "win_x64"
+              },
+              {
+                "bin": "tree-sitter.exe",
+                "file": "tree-sitter-cli-windows-arm64.zip",
+                "target": "win_arm64"
+              },
+              {
+                "bin": "tree-sitter.exe",
+                "file": "tree-sitter-cli-windows-x86.zip",
+                "target": "win_x86"
+              }
+            ],
+            "id": "pkg:github/tree-sitter/tree-sitter@v0.26.12"
+          },
+          "type": "registry+v1"
+        }
+      }
+    },
+    "setup": {
+      "boundary": "Clean short-root E2E readiness with the 32 plugin repositories preseeded from frozen object stores; Mason assets and parser grammars remain online.",
+      "normal_clean_plugin_install_reason": "Git for Windows HTTPS and local/file transports executed bundled x64 sh.exe; the online attempt is excluded from no-emulation sign-off.",
+      "normal_clean_plugin_install_timing": null,
+      "preseeded_readiness": {
+        "count": 3,
+        "iqr_seconds": 2.448327000001882,
+        "max_seconds": 46.59512630000245,
+        "median_seconds": 42.593986400002905,
+        "min_seconds": 41.698472299998684,
+        "p95_seconds": 46.59512630000245,
+        "q1_seconds": 42.146229350000795,
+        "q3_seconds": 44.59455635000268,
+        "samples_seconds": [
+          46.59512630000245,
+          42.593986400002905,
+          41.698472299998684
+        ]
+      },
+      "preseeded_signoff": {
+        "count": 3,
+        "iqr_seconds": 5.756585150000319,
+        "max_seconds": 84.37915079999948,
+        "median_seconds": 82.23125099999743,
+        "min_seconds": 72.86598049999884,
+        "p95_seconds": 84.37915079999948,
+        "q1_seconds": 77.54861574999813,
+        "q3_seconds": 83.30520089999845,
+        "samples_seconds": [
+          84.37915079999948,
+          82.23125099999743,
+          72.86598049999884
+        ]
+      },
+      "stage_durations": {
+        "bootstrap-plugins-attempt-1": {
+          "count": 3,
+          "iqr_seconds": 0.11536920000071405,
+          "max_seconds": 0.7007601000004797,
+          "median_seconds": 0.6965700000000652,
+          "min_seconds": 0.47002169999905163,
+          "p95_seconds": 0.7007601000004797,
+          "q1_seconds": 0.5832958499995584,
+          "q3_seconds": 0.6986650500002725,
+          "samples_seconds": [
+            0.47002169999905163,
+            0.6965700000000652,
+            0.7007601000004797
+          ]
+        },
+        "compile-native-yq-bridge": {
+          "count": 3,
+          "iqr_seconds": 0.005271499998343643,
+          "max_seconds": 0.20672190000186674,
+          "median_seconds": 0.20662219999940135,
+          "min_seconds": 0.19617890000517946,
+          "p95_seconds": 0.20672190000186674,
+          "q1_seconds": 0.2014005500022904,
+          "q3_seconds": 0.20667205000063404,
+          "samples_seconds": [
+            0.19617890000517946,
+            0.20672190000186674,
+            0.20662219999940135
+          ]
+        },
+        "initialize-fixture-git": {
+          "count": 3,
+          "iqr_seconds": 0.002924550000898307,
+          "max_seconds": 0.10281720000057248,
+          "median_seconds": 0.10149240000464488,
+          "min_seconds": 0.09696809999877587,
+          "p95_seconds": 0.10281720000057248,
+          "q1_seconds": 0.09923025000171037,
+          "q3_seconds": 0.10215480000260868,
+          "samples_seconds": [
+            0.09696809999877587,
+            0.10149240000464488,
+            0.10281720000057248
+          ]
+        },
+        "lazy-noop-maintenance": {
+          "count": 3,
+          "iqr_seconds": 0.002048599999397993,
+          "max_seconds": 0.132623199999216,
+          "median_seconds": 0.1303007999958936,
+          "min_seconds": 0.12852600000042003,
+          "p95_seconds": 0.132623199999216,
+          "q1_seconds": 0.12941339999815682,
+          "q3_seconds": 0.1314619999975548,
+          "samples_seconds": [
+            0.12852600000042003,
+            0.1303007999958936,
+            0.132623199999216
+          ]
+        },
+        "lazyvim-arm64-preflight": {
+          "count": 3,
+          "iqr_seconds": 0.01251379999666824,
+          "max_seconds": 0.7411119999960647,
+          "median_seconds": 0.730441100000462,
+          "min_seconds": 0.7160844000027282,
+          "p95_seconds": 0.7411119999960647,
+          "q1_seconds": 0.7232627500015951,
+          "q3_seconds": 0.7357765499982634,
+          "samples_seconds": [
+            0.7411119999960647,
+            0.730441100000462,
+            0.7160844000027282
+          ]
+        },
+        "lazyvim-health": {
+          "count": 3,
+          "iqr_seconds": 0.05177930000354536,
+          "max_seconds": 6.424652400004561,
+          "median_seconds": 6.331382199998188,
+          "min_seconds": 6.32109379999747,
+          "p95_seconds": 6.424652400004561,
+          "q1_seconds": 6.326237999997829,
+          "q3_seconds": 6.378017300001375,
+          "samples_seconds": [
+            6.424652400004561,
+            6.32109379999747,
+            6.331382199998188
+          ]
+        },
+        "lazyvim-luals-attachment": {
+          "count": 3,
+          "iqr_seconds": 2.4924338000055286,
+          "max_seconds": 6.442696800004342,
+          "median_seconds": 1.4958296000040718,
+          "min_seconds": 1.4578291999932844,
+          "p95_seconds": 6.442696800004342,
+          "q1_seconds": 1.4768293999986781,
+          "q3_seconds": 3.9692632000042067,
+          "samples_seconds": [
+            6.442696800004342,
+            1.4578291999932844,
+            1.4958296000040718
+          ]
+        },
+        "luals-protocol": {
+          "count": 3,
+          "iqr_seconds": 0.0007665000011911616,
+          "max_seconds": 0.2981811999998172,
+          "median_seconds": 0.2977169000005233,
+          "min_seconds": 0.29664819999743486,
+          "p95_seconds": 0.2981811999998172,
+          "q1_seconds": 0.2971825499989791,
+          "q3_seconds": 0.29794905000017025,
+          "samples_seconds": [
+            0.2981811999998172,
+            0.29664819999743486,
+            0.2977169000005233
+          ]
+        },
+        "luals-version": {
+          "count": 3,
+          "iqr_seconds": 0.0017719999996188562,
+          "max_seconds": 0.06608630000118865,
+          "median_seconds": 0.06502009999530856,
+          "min_seconds": 0.06254230000195093,
+          "p95_seconds": 0.06608630000118865,
+          "q1_seconds": 0.06378119999862975,
+          "q3_seconds": 0.0655531999982486,
+          "samples_seconds": [
+            0.06254230000195093,
+            0.06502009999530856,
+            0.06608630000118865
+          ]
+        },
+        "mason-install": {
+          "count": 3,
+          "iqr_seconds": 0.31610900000305264,
+          "max_seconds": 6.1798822000055225,
+          "median_seconds": 5.957054799997422,
+          "min_seconds": 5.547664199999417,
+          "p95_seconds": 6.1798822000055225,
+          "q1_seconds": 5.75235949999842,
+          "q3_seconds": 6.068468500001472,
+          "samples_seconds": [
+            5.957054799997422,
+            6.1798822000055225,
+            5.547664199999417
+          ]
+        },
+        "materialize-32-plugin-graph": {
+          "count": 3,
+          "iqr_seconds": 0.19600469999932102,
+          "max_seconds": 12.85563589999947,
+          "median_seconds": 12.671973000004073,
+          "min_seconds": 12.463626500000828,
+          "p95_seconds": 12.85563589999947,
+          "q1_seconds": 12.56779975000245,
+          "q3_seconds": 12.763804450001771,
+          "samples_seconds": [
+            12.463626500000828,
+            12.85563589999947,
+            12.671973000004073
+          ]
+        },
+        "materialize-starter-cached": {
+          "count": 3,
+          "iqr_seconds": 0.011710449998645345,
+          "max_seconds": 0.303338799996709,
+          "median_seconds": 0.28269469999941066,
+          "min_seconds": 0.2799178999994183,
+          "p95_seconds": 0.303338799996709,
+          "q1_seconds": 0.2813062999994145,
+          "q3_seconds": 0.2930167499980598,
+          "samples_seconds": [
+            0.2799178999994183,
+            0.303338799996709,
+            0.28269469999941066
+          ]
+        },
+        "runtime-quiescence": {
+          "count": 3,
+          "iqr_seconds": 0.0010105500005010981,
+          "max_seconds": 0.13340250000328524,
+          "median_seconds": 0.13316150000173366,
+          "min_seconds": 0.13138140000228304,
+          "p95_seconds": 0.13340250000328524,
+          "q1_seconds": 0.13227145000200835,
+          "q3_seconds": 0.13328200000250945,
+          "samples_seconds": [
+            0.13316150000173366,
+            0.13340250000328524,
+            0.13138140000228304
+          ]
+        },
+        "shfmt-check": {
+          "count": 3,
+          "iqr_seconds": 0.0005379499962145928,
+          "max_seconds": 0.01869559999613557,
+          "median_seconds": 0.01836380000167992,
+          "min_seconds": 0.017619700003706384,
+          "p95_seconds": 0.01869559999613557,
+          "q1_seconds": 0.017991750002693152,
+          "q3_seconds": 0.018529699998907745,
+          "samples_seconds": [
+            0.017619700003706384,
+            0.01869559999613557,
+            0.01836380000167992
+          ]
+        },
+        "shfmt-format": {
+          "count": 3,
+          "iqr_seconds": 0.003175949997967109,
+          "max_seconds": 0.06399119999696268,
+          "median_seconds": 0.06006889999844134,
+          "min_seconds": 0.05763930000102846,
+          "p95_seconds": 0.06399119999696268,
+          "q1_seconds": 0.0588540999997349,
+          "q3_seconds": 0.06203004999770201,
+          "samples_seconds": [
+            0.06399119999696268,
+            0.06006889999844134,
+            0.05763930000102846
+          ]
+        },
+        "startuptime": {
+          "count": 3,
+          "iqr_seconds": 0.006339350002235733,
+          "max_seconds": 0.13833860000158893,
+          "median_seconds": 0.13393709999945713,
+          "min_seconds": 0.12565989999711746,
+          "p95_seconds": 0.13833860000158893,
+          "q1_seconds": 0.1297984999982873,
+          "q3_seconds": 0.13613785000052303,
+          "samples_seconds": [
+            0.13393709999945713,
+            0.12565989999711746,
+            0.13833860000158893
+          ]
+        },
+        "stylua-check": {
+          "count": 3,
+          "iqr_seconds": 0.0018482999985280912,
+          "max_seconds": 0.01995879999594763,
+          "median_seconds": 0.018668099997739773,
+          "min_seconds": 0.016262199998891447,
+          "p95_seconds": 0.01995879999594763,
+          "q1_seconds": 0.01746514999831561,
+          "q3_seconds": 0.0193134499968437,
+          "samples_seconds": [
+            0.016262199998891447,
+            0.018668099997739773,
+            0.01995879999594763
+          ]
+        },
+        "stylua-format": {
+          "count": 3,
+          "iqr_seconds": 0.0009401500028616283,
+          "max_seconds": 0.08171410000068136,
+          "median_seconds": 0.08132289999775821,
+          "min_seconds": 0.0798337999949581,
+          "p95_seconds": 0.08171410000068136,
+          "q1_seconds": 0.08057834999635816,
+          "q3_seconds": 0.08151849999921978,
+          "samples_seconds": [
+            0.08132289999775821,
+            0.0798337999949581,
+            0.08171410000068136
+          ]
+        },
+        "tree-sitter-version": {
+          "count": 3,
+          "iqr_seconds": 0.002541150002798531,
+          "max_seconds": 0.05307310000353027,
+          "median_seconds": 0.04908070000237785,
+          "min_seconds": 0.04799079999793321,
+          "p95_seconds": 0.05307310000353027,
+          "q1_seconds": 0.04853575000015553,
+          "q3_seconds": 0.05107690000295406,
+          "samples_seconds": [
+            0.04908070000237785,
+            0.04799079999793321,
+            0.05307310000353027
+          ]
+        },
+        "treesitter-readiness": {
+          "count": 3,
+          "iqr_seconds": 0.1710302000028605,
+          "max_seconds": 5.488477000006242,
+          "median_seconds": 5.355258000003232,
+          "min_seconds": 5.146416600000521,
+          "p95_seconds": 5.488477000006242,
+          "q1_seconds": 5.250837300001876,
+          "q3_seconds": 5.421867500004737,
+          "samples_seconds": [
+            5.355258000003232,
+            5.488477000006242,
+            5.146416600000521
+          ]
+        }
+      }
+    },
+    "startup": {
+      "empty_pooled": {
+        "count": 30,
+        "iqr_seconds": 0.0050653750004130416,
+        "max_seconds": 0.10569740000210004,
+        "median_seconds": 0.09093149999898742,
+        "min_seconds": 0.0862219000046025,
+        "p95_seconds": 0.10367060000135098,
+        "q1_seconds": 0.088127524997617,
+        "q3_seconds": 0.09319289999803004,
+        "samples_seconds": [
+          0.09068560000014259,
+          0.09187350000138395,
+          0.08810809999704361,
+          0.09347369999886723,
+          0.09117739999783225,
+          0.09703350000199862,
+          0.0904517999952077,
+          0.08881649999966612,
+          0.09907040000689449,
+          0.09355589999904623,
+          0.09143760000006296,
+          0.10569740000210004,
+          0.09120619999885093,
+          0.08818579999933718,
+          0.08713459999853512,
+          0.08705159999954049,
+          0.10145829999964917,
+          0.08636919999844395,
+          0.08914020000520395,
+          0.10367060000135098,
+          0.08857240000361344,
+          0.09338169999682577,
+          0.08633920000283979,
+          0.0862219000046025,
+          0.08736420000059297,
+          0.09262650000164285,
+          0.09126190000097267,
+          0.09221759999491042,
+          0.08995310000318568,
+          0.08768859999690903
+        ]
+      },
+      "file_pooled": {
+        "count": 30,
+        "iqr_seconds": 0.017273174997171736,
+        "max_seconds": 0.4422528000068269,
+        "median_seconds": 0.37302214999726857,
+        "min_seconds": 0.3524993999963044,
+        "p95_seconds": 0.41580139999859966,
+        "q1_seconds": 0.36483187500380154,
+        "q3_seconds": 0.3821050500009733,
+        "samples_seconds": [
+          0.3686440000019502,
+          0.37282089999644086,
+          0.38341660000151023,
+          0.35909109999920474,
+          0.36370480000186944,
+          0.39321330000529997,
+          0.3859175000034156,
+          0.4422528000068269,
+          0.3953944000022602,
+          0.3631798999995226,
+          0.3693563999986509,
+          0.3673096999991685,
+          0.37551520000124583,
+          0.37223639999865554,
+          0.3781703999993624,
+          0.3765328000008594,
+          0.37651789999654284,
+          0.41580139999859966,
+          0.3732233999980963,
+          0.37661150000349153,
+          0.37494149999838555,
+          0.3660617999994429,
+          0.35730340000009164,
+          0.3571908000012627,
+          0.38966170000639977,
+          0.36442190000525443,
+          0.3613167000003159,
+          0.3671094000019366,
+          0.3881327999988571,
+          0.3524993999963044
+        ]
+      },
+      "runs": [
+        {
+          "empty": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.003025100002560066,
+            "max_seconds": 0.09907040000689449,
+            "median_seconds": 0.0915254499996081,
+            "min_seconds": 0.08810809999704361,
+            "name": "warm-empty-startup",
+            "p95_seconds": 0.09907040000689449,
+            "q1_seconds": 0.09051024999644142,
+            "q3_seconds": 0.09353534999900148,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.09068560000014259,
+              0.09187350000138395,
+              0.08810809999704361,
+              0.09347369999886723,
+              0.09117739999783225,
+              0.09703350000199862,
+              0.0904517999952077,
+              0.08881649999966612,
+              0.09907040000689449,
+              0.09355589999904623
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "file": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "C:\\lvb-a64\\e2e-preseed-2\\project\\sample.lua",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.026449750002939254,
+            "max_seconds": 0.4422528000068269,
+            "median_seconds": 0.37811874999897555,
+            "min_seconds": 0.35909109999920474,
+            "name": "warm-file-startup",
+            "p95_seconds": 0.4422528000068269,
+            "q1_seconds": 0.36493960000188963,
+            "q3_seconds": 0.3913893500048289,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.3686440000019502,
+              0.37282089999644086,
+              0.38341660000151023,
+              0.35909109999920474,
+              0.36370480000186944,
+              0.39321330000529997,
+              0.3859175000034156,
+              0.4422528000068269,
+              0.3953944000022602,
+              0.3631798999995226
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "label": "win-arm64-e2e-preseeded-2"
+        },
+        {
+          "empty": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.011555725001016981,
+            "max_seconds": 0.10569740000210004,
+            "median_seconds": 0.09017320000202744,
+            "min_seconds": 0.08636919999844395,
+            "name": "warm-empty-startup",
+            "p95_seconds": 0.10569740000210004,
+            "q1_seconds": 0.08739739999873564,
+            "q3_seconds": 0.09895312499975262,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.09143760000006296,
+              0.10569740000210004,
+              0.09120619999885093,
+              0.08818579999933718,
+              0.08713459999853512,
+              0.08705159999954049,
+              0.10145829999964917,
+              0.08636919999844395,
+              0.08914020000520395,
+              0.10367060000135098
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "file": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "C:\\lvb-a64\\e2e-preseed-3\\project\\sample.lua",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.0041086750043177744,
+            "max_seconds": 0.41580139999859966,
+            "median_seconds": 0.37601654999889433,
+            "min_seconds": 0.3673096999991685,
+            "name": "warm-file-startup",
+            "p95_seconds": 0.41580139999859966,
+            "q1_seconds": 0.37248314999851573,
+            "q3_seconds": 0.3765918250028335,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.3693563999986509,
+              0.3673096999991685,
+              0.37551520000124583,
+              0.37223639999865554,
+              0.3781703999993624,
+              0.3765328000008594,
+              0.37651789999654284,
+              0.41580139999859966,
+              0.3732233999980963,
+              0.37661150000349153
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "label": "win-arm64-e2e-preseeded-3"
+        },
+        {
+          "empty": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.004533374996753992,
+            "max_seconds": 0.09338169999682577,
+            "median_seconds": 0.08926275000339956,
+            "min_seconds": 0.0862219000046025,
+            "name": "warm-empty-startup",
+            "p95_seconds": 0.09338169999682577,
+            "q1_seconds": 0.08744529999967199,
+            "q3_seconds": 0.09197867499642598,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.08857240000361344,
+              0.09338169999682577,
+              0.08633920000283979,
+              0.0862219000046025,
+              0.08736420000059297,
+              0.09262650000164285,
+              0.09126190000097267,
+              0.09221759999491042,
+              0.08995310000318568,
+              0.08768859999690903
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "file": {
+            "command": [
+              "C:\\lvb-tools-a64\\expanded\\nvim\\nvim-win-arm64\\bin\\nvim.exe",
+              "--headless",
+              "C:\\lvb-a64\\e2e-preseed-4\\project\\sample.lua",
+              "+qa!"
+            ],
+            "count": 10,
+            "iqr_seconds": 0.014676749999125605,
+            "max_seconds": 0.38966170000639977,
+            "median_seconds": 0.36524185000234866,
+            "min_seconds": 0.3524993999963044,
+            "name": "warm-file-startup",
+            "p95_seconds": 0.38966170000639977,
+            "q1_seconds": 0.3583067250001477,
+            "q3_seconds": 0.3729834749992733,
+            "return_codes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "samples_seconds": [
+              0.37494149999838555,
+              0.3660617999994429,
+              0.35730340000009164,
+              0.3571908000012627,
+              0.38966170000639977,
+              0.36442190000525443,
+              0.3613167000003159,
+              0.3671094000019366,
+              0.3881327999988571,
+              0.3524993999963044
+            ],
+            "warmup_return_codes": [
+              0,
+              0,
+              0
+            ]
+          },
+          "label": "win-arm64-e2e-preseeded-4"
+        }
+      ]
+    }
+  },
+  "wsl": {
+    "accepted_run": "repetition-3",
+    "architecture": {
+      "expected": {
+        "architecture": "arm64",
+        "format": "ELF",
+        "machine": "183"
+      },
+      "parser_count": 24,
+      "parser_native_count": 24,
+      "scope_counts": {
+        "mason": 7,
+        "parsers": 24,
+        "plugins": 0
+      },
+      "wrong_architecture": []
+    },
+    "correctness": {
+      "architecture": true,
+      "formatters": true,
+      "health": true,
+      "lazyvim_luals_attachment": true,
+      "luals_protocol": true,
+      "mason": true,
+      "plugin_lock": true,
+      "preflight": true,
+      "treesitter": true
+    },
+    "maintenance": {
+      "name": "lazy-noop-maintenance",
+      "return_code": 0,
+      "seconds": 0.20860567799999785
+    },
+    "placement": {
+      "accepted": true,
+      "active_path_count": 7111,
+      "active_path_hits": [],
+      "git_trace_event_count": 10884,
+      "mounts": {
+        "cache": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3/xdg/cache",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "cc": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/usr/bin/cc",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "compiler": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/usr/bin/gcc",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "config": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3/xdg/config",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "cwd": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lazyvim-arm64-e2e-src-20260812-final",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "data": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3/xdg/data",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "git": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/usr/bin/git",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "git_cache": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-cache-arm64-complete",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "harness": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lazyvim-arm64-e2e-src-20260812-final",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "lazyvim_source": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-e2e-src-20260812/LazyVim",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "nvim": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/.local/lvb-arm64-tools/expanded/nvim-linux-arm64/bin/nvim",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "project": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3/project",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "python": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/usr/bin/python3",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "starter_source": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-e2e-src-20260812/starter",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "state": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3/xdg/state",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "tool_bundle": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/.local/lvb-arm64-tools",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "treesitter_source": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-e2e-src-20260812/nvim-treesitter",
+          "source": "/dev/sdd",
+          "target": "/"
+        },
+        "work": {
+          "fstype": "ext4",
+          "options": "rw,relatime,discard,errors=remount-ro,data=ordered",
+          "path": "/root/lvb-a64/e2e-reg-3",
+          "source": "/dev/sdd",
+          "target": "/"
+        }
+      },
+      "recursive_forbidden_hits": []
+    },
+    "receipts": {
+      "lua-language-server": {
+        "path": "runs/wsl-arm64-e2e-regression/repetition-3/mason-receipts/lua-language-server.json",
+        "sha256": "c75cdc2a86e774199b8e3d8d2c61d52614e891a1e7820ce3fb7b67bc909c2062",
+        "source": {
+          "id": "pkg:github/luals/lua-language-server@3.19.0",
+          "raw": {
+            "asset": [
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-darwin-arm64.tar.gz:libexec/",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-darwin-x64.tar.gz:libexec/",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-arm64.tar.gz:libexec/",
+                "target": "linux_arm64_gnu"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-x64.tar.gz:libexec/",
+                "target": "linux_x64_gnu"
+              },
+              {
+                "bin": "exec:libexec/bin/lua-language-server",
+                "file": "lua-language-server-{{version}}-linux-x64-musl.tar.gz:libexec/",
+                "target": "linux_x64_musl"
+              },
+              {
+                "bin": "bin/lua-language-server.exe",
+                "file": "lua-language-server-{{version}}-win32-x64.zip",
+                "target": "win_x64"
+              }
+            ],
+            "id": "pkg:github/LuaLS/lua-language-server@3.19.0"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "shfmt": {
+        "path": "runs/wsl-arm64-e2e-regression/repetition-3/mason-receipts/shfmt.json",
+        "sha256": "266b28a82c4abe11558642721f2f27fa59cfa584d6ec4719c6fe7b8285825b5c",
+        "source": {
+          "id": "pkg:github/mvdan/sh@v3.13.1",
+          "raw": {
+            "asset": [
+              {
+                "file": "shfmt_{{version}}_darwin_arm64",
+                "target": "darwin_arm64"
+              },
+              {
+                "file": "shfmt_{{version}}_darwin_amd64",
+                "target": "darwin_x64"
+              },
+              {
+                "file": "shfmt_{{version}}_linux_arm64",
+                "target": "linux_arm64"
+              },
+              {
+                "file": "shfmt_{{version}}_linux_amd64",
+                "target": "linux_x64"
+              },
+              {
+                "file": "shfmt_{{version}}_windows_386.exe",
+                "target": "win_x86"
+              },
+              {
+                "file": "shfmt_{{version}}_windows_amd64.exe",
+                "target": "win_x64"
+              }
+            ],
+            "id": "pkg:github/mvdan/sh@v3.13.1"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "stylua": {
+        "path": "runs/wsl-arm64-e2e-regression/repetition-3/mason-receipts/stylua.json",
+        "sha256": "2ec83c74c76a070f560f7eb3a71cc76cd9ab280f76ca4116693e4a06076967af",
+        "source": {
+          "id": "pkg:github/johnnymorganz/stylua@v2.5.2",
+          "raw": {
+            "asset": [
+              {
+                "bin": "stylua",
+                "file": "stylua-macos-aarch64.zip",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-macos-x86_64.zip",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-x86_64.zip",
+                "target": "linux_x64_gnu"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-aarch64.zip",
+                "target": "linux_arm64_gnu"
+              },
+              {
+                "bin": "stylua",
+                "file": "stylua-linux-x86_64-musl.zip",
+                "target": "linux_x64"
+              },
+              {
+                "bin": "stylua.exe",
+                "file": "stylua-windows-x86_64.zip",
+                "target": "win_x64"
+              }
+            ],
+            "id": "pkg:github/johnnymorganz/stylua@v2.5.2"
+          },
+          "type": "registry+v1"
+        }
+      },
+      "tree-sitter-cli": {
+        "path": "runs/wsl-arm64-e2e-regression/repetition-3/mason-receipts/tree-sitter-cli.json",
+        "sha256": "82886bb7e4b5eac2b4ad9630879045969a6ce24ffebc72351a645abdb08de836",
+        "source": {
+          "id": "pkg:github/tree-sitter/tree-sitter@v0.26.12",
+          "raw": {
+            "asset": [
+              {
+                "bin": "tree-sitter-macos-x64",
+                "file": "tree-sitter-macos-x64.gz",
+                "target": "darwin_x64"
+              },
+              {
+                "bin": "tree-sitter-macos-arm64",
+                "file": "tree-sitter-macos-arm64.gz",
+                "target": "darwin_arm64"
+              },
+              {
+                "bin": "tree-sitter-linux-x64",
+                "file": "tree-sitter-linux-x64.gz",
+                "target": "linux_x64"
+              },
+              {
+                "bin": "tree-sitter-linux-x86",
+                "file": "tree-sitter-linux-x86.gz",
+                "target": "linux_x86"
+              },
+              {
+                "bin": "tree-sitter-linux-arm64",
+                "file": "tree-sitter-linux-arm64.gz",
+                "target": "linux_arm64"
+              },
+              {
+                "bin": "tree-sitter.exe",
+                "file": "tree-sitter-cli-windows-x64.zip",
+                "target": "win_x64"
+              },
+              {
+                "bin": "tree-sitter.exe",
+                "file": "tree-sitter-cli-windows-x86.zip",
+                "target": "win_x86"
+              }
+            ],
+            "id": "pkg:github/tree-sitter/tree-sitter@v0.26.12"
+          },
+          "type": "registry+v1"
+        }
+      }
+    },
+    "setup": {
+      "readiness_seconds": 14.057938543999995,
+      "signoff_seconds": 14.198334613999997,
+      "stages": {
+        "bootstrap-plugins": 2.1892759449999986,
+        "checkout-starter": 0.002056436000003714,
+        "clone-starter-cached": 0.03423502200000428,
+        "initialize-fixture-git": 0.004742543000006094,
+        "lazy-noop-maintenance": 0.20860567799999785,
+        "lazyvim-arm64-preflight": 0.03341009700000086,
+        "lazyvim-health": 3.9773221490000026,
+        "lazyvim-luals-attachment": 0.3627239010000025,
+        "luals-protocol": 0.05527984999999802,
+        "luals-version": 0.009035364999995465,
+        "mason-install": 0.6143340650000013,
+        "runtime-quiescence": 0.019880661999998495,
+        "shfmt-check": 0.0018949749999990217,
+        "shfmt-format": 0.006902635000002988,
+        "startuptime": 0.020083827000000554,
+        "stylua-check": 0.0038031760000052373,
+        "stylua-format": 0.010044056000005241,
+        "tree-sitter-version": 0.0014810189999963086,
+        "treesitter-readiness": 6.377239519999996
+      }
+    },
+    "startup": {
+      "empty": {
+        "command": [
+          "/root/.local/lvb-arm64-tools/expanded/nvim-linux-arm64/bin/nvim",
+          "--headless",
+          "+qa!"
+        ],
+        "count": 10,
+        "iqr_seconds": 0.00012956499999994264,
+        "max_seconds": 0.03279137999999904,
+        "median_seconds": 0.03223429650000398,
+        "min_seconds": 0.03199894299999784,
+        "name": "warm-empty-startup",
+        "p95_seconds": 0.03279137999999904,
+        "q1_seconds": 0.03220231124999984,
+        "q3_seconds": 0.03233187624999978,
+        "return_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "samples_seconds": [
+          0.03248255000000455,
+          0.03279137999999904,
+          0.03225578200000001,
+          0.032357240999999703,
+          0.03219653200000039,
+          0.032219648999998185,
+          0.03212449099999759,
+          0.03199894299999784,
+          0.032241371000004904,
+          0.03222722200000305
+        ],
+        "warmup_return_codes": [
+          0,
+          0,
+          0
+        ]
+      },
+      "file": {
+        "command": [
+          "/root/.local/lvb-arm64-tools/expanded/nvim-linux-arm64/bin/nvim",
+          "--headless",
+          "/root/lvb-a64/e2e-reg-3/project/sample.lua",
+          "+qa!"
+        ],
+        "count": 10,
+        "iqr_seconds": 0.00028171000000476454,
+        "max_seconds": 0.11588526399999921,
+        "median_seconds": 0.11469371199999756,
+        "min_seconds": 0.11446104400000223,
+        "name": "warm-file-startup",
+        "p95_seconds": 0.11588526399999921,
+        "q1_seconds": 0.11462495624999747,
+        "q3_seconds": 0.11490666625000223,
+        "return_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "samples_seconds": [
+          0.11492168000000191,
+          0.11452201699999875,
+          0.11464088999999689,
+          0.11486162500000319,
+          0.11503045300000281,
+          0.11446104400000223,
+          0.11461964499999766,
+          0.11466898999999842,
+          0.1147184339999967,
+          0.11588526399999921
+        ],
+        "warmup_return_codes": [
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  }
+}

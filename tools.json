@@ -1,0 +1,17 @@
+{
+  "mason_registry": "github:mason-org/mason-registry@2026-08-10-faulty-close",
+  "neovim": {
+    "archive": "nvim-win64.zip",
+    "bytes": 12617304,
+    "sha256": "9fc3572829ffd13debb6e32555da2c8cc02555568260a9fc4cf1f65bbcca319c",
+    "url": "https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-win64.zip",
+    "version": "0.12.4"
+  },
+  "llvm_mingw": {
+    "archive": "llvm-mingw-20260616-ucrt-x86_64.zip",
+    "bytes": 187504083,
+    "sha256": "b9b68a4d276e16fa25802aaba458e4638f64b3884c290aaccdc2d87083b6ca35",
+    "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-x86_64.zip",
+    "version": "20260616"
+  }
+}

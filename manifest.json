@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "components": {
+    "bee.lua": {
+      "repository": "crutkas/bee.lua",
+      "branch": "crutkas-windows-arm64-support",
+      "commit": "5cdaaea78b7f44c01d8cf0f772e8479afd616a80",
+      "pull_request": "https://github.com/crutkas/bee.lua/pull/1"
+    },
+    "lua-language-server": {
+      "repository": "crutkas/lua-language-server",
+      "branch": "crutkas-windows-arm64-luals",
+      "commit": "11db71d7763570e6ae33218e99dbd957865bfe98",
+      "pull_request": "https://github.com/crutkas/lua-language-server/pull/1",
+      "release": "https://github.com/crutkas/lua-language-server/releases/tag/arm64-e2e-20260812-luals",
+      "asset": "https://github.com/crutkas/lua-language-server/releases/download/arm64-e2e-20260812-luals/lua-language-server-3.19.0-win32-arm64.zip",
+      "sha256": "e79fe25dc91e049b4406a26bfd35716dec8434eb141411d71848105223f1b624",
+      "pe_machine": "0xAA64"
+    },
+    "lazyvim": {
+      "repository": "crutkas/LazyVim",
+      "branch": "crutkas-windows-arm64-compiler",
+      "commit": "0d773f3cb86706e101733f5ff2ef5c36d821ddd2",
+      "pull_request": "https://github.com/crutkas/LazyVim/pull/1"
+    },
+    "mason-registry": {
+      "repository": "crutkas/mason-registry",
+      "branch": "crutkas-add-tree-sitter-arm64",
+      "commit": "32cfcb4d16a4a3942ac2daa703479ef261b0f023",
+      "pull_request": "https://github.com/crutkas/mason-registry/pull/1",
+      "e2e_branch": "crutkas-arm64-e2e-registry",
+      "e2e_commit": "75a6e0ebca221321cf154f169f56873749dd0d17",
+      "e2e_pull_request": "https://github.com/crutkas/mason-registry/pull/2",
+      "e2e_only": true
+    },
+    "nvim-treesitter": {
+      "repository": "crutkas/nvim-treesitter",
+      "branch": "crutkas-fix-windows-parser-install",
+      "commit": "61c17a841e9295716e441a42d88c93431a100890",
+      "pull_request": "https://github.com/crutkas/nvim-treesitter/pull/1"
+    },
+    "stylua": {
+      "repository": "crutkas/StyLua",
+      "branch": "crutkas-windows-arm64-release",
+      "commit": "1aedf8bbaac4b1fb5a4bd51e9e93c52548b32f31",
+      "pull_request": "https://github.com/crutkas/StyLua/pull/1",
+      "release": "https://github.com/crutkas/StyLua/releases/tag/arm64-e2e-20260812-stylua",
+      "asset": "https://github.com/crutkas/StyLua/releases/download/arm64-e2e-20260812-stylua/stylua-windows-aarch64.zip",
+      "sha256": "A69DA76852134633197AAE03D17BF05ABAB1E4CB16824E44B3FC3B1AD133F104",
+      "pe_machine": "0xAA64"
+    },
+    "shfmt": {
+      "repository": "crutkas/sh",
+      "branch": "crutkas-windows-arm64-release",
+      "commit": "8297faffcb1bb7e7b332d44fb96afe1a88e19e99",
+      "pull_request": "https://github.com/crutkas/sh/pull/1",
+      "release": "https://github.com/crutkas/sh/releases/tag/arm64-e2e-20260812-shfmt",
+      "asset": "https://github.com/crutkas/sh/releases/download/arm64-e2e-20260812-shfmt/shfmt_v3.13.1_windows_arm64.exe",
+      "sha256": "1B6E6CD8E1142951E72412E527A6ED97DE3908B9B212FDD147CBD93399F2D355",
+      "pe_machine": "0xAA64"
+    },
+    "tree-sitter-cli": {
+      "repository": "tree-sitter/tree-sitter",
+      "release": "https://github.com/tree-sitter/tree-sitter/releases/tag/v0.26.12",
+      "asset": "https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.12/tree-sitter-cli-windows-arm64.zip",
+      "bytes": 3393092,
+      "sha256": "5ECC7FF2E0AC60BE9F93CE20927F3767FD6187F972BFF8FADA5540979D6ABC3C",
+      "binary_sha256": "5A61AA7B079C8026408E356F948248307DDF298DB2FC1EE06292CB2FD6692B79",
+      "pe_machine": "0xAA64"
+    }
+  }
+}
