@@ -972,12 +972,12 @@ class Lane:
         if self.args.lane == "windows":
             if (
                 compiler.get("arch") != self.args.expected_architecture
-                or compiler.get("kind") != "llvm-mingw"
-                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") != "1"
+                or compiler.get("kind") != "msvc"
+                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") is not None
                 or not result.get("after", {}).get("CC")
             ):
                 raise LaneError(
-                    "LazyVim did not auto-select and configure the expected LLVM-MinGW compiler"
+                    "LazyVim did not auto-select and configure the expected MSVC compiler"
                 )
         self.summary["preflight"] = result
         self.write_summary()
@@ -1009,7 +1009,8 @@ class Lane:
             if (
                 result.get("before", {}).get("CC") is not None
                 or result.get("before", {}).get("CRATE_CC_NO_DEFAULTS") is not None
-                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") != "1"
+                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") is not None
+                or not result.get("after", {}).get("CC")
             ):
                 raise LaneError("Parser install did not begin from an unset compiler environment")
         self.summary["treesitter"] = result
