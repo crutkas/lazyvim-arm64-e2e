@@ -1,5 +1,9 @@
 # LazyVim Windows ARM64 E2E
 
+> Historical native ARM64 evidence captured before the x64 `vcvarsall.bat`
+> quoting follow-up. Use the current immutable pins in `../manifest.json` for
+> new runs. The follow-up commit preserves the validated ARM64 behavior.
+
 ## Outcome
 
 The immutable fork stack completes native Windows ARM64 correctness and

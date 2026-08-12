@@ -38,14 +38,14 @@ Each `RunId` must be unique. Evidence is written to `out/<RunId>/`.
 
 | Surface | Validation |
 |---|---|
-| LazyVim | `crutkas/LazyVim@0d773f3cb86706e101733f5ff2ef5c36d821ddd2` |
+| LazyVim | `crutkas/LazyVim@975e73f9455faa7960fba5e14b4c81e20fbf2716` |
 | nvim-treesitter | `crutkas/nvim-treesitter@61c17a841e9295716e441a42d88c93431a100890` |
 | Frozen graph | All 32 exact plugin commits, clean worktrees |
 | Mason | Pinned upstream registry, x64 StyLua, shfmt, LuaLS, and tree-sitter |
 | Formatting | Real StyLua and shfmt rewrites and clean checks |
 | LuaLS | JSON-RPC initialize, didOpen, hover, shutdown, exit; LazyVim attachment |
 | Parsers | 23 LazyVim defaults plus dependencies; install, load, and parse |
-| Compiler/preflight | LazyVim selects native x64 LLVM-MinGW with no preset `CC` |
+| Compiler/preflight | LazyVim selects native x64 MSVC when available, otherwise pinned x64 LLVM-MinGW, with no preset `CC` |
 | Architecture | All resolved tools, installed Mason payloads, and parsers are PE x64 |
 | Maintenance/startup | No-op maintenance and warm empty/file startup samples |
 | Git | Complete trace; shell use is allowed only when the shell is native x64 |

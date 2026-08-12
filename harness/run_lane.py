@@ -970,14 +970,20 @@ class Lane:
             raise LaneError(f"LazyVim preflight gate failed: {result}")
         compiler = result.get("compiler") or {}
         if self.args.lane == "windows":
+            kind = compiler.get("kind")
+            no_defaults = result.get("after", {}).get("CRATE_CC_NO_DEFAULTS")
+            environment_ok = (
+                kind == "msvc" and no_defaults is None
+            ) or (
+                kind == "llvm-mingw" and no_defaults == "1"
+            )
             if (
                 compiler.get("arch") != self.args.expected_architecture
-                or compiler.get("kind") != "msvc"
-                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") is not None
+                or not environment_ok
                 or not result.get("after", {}).get("CC")
             ):
                 raise LaneError(
-                    "LazyVim did not auto-select and configure the expected MSVC compiler"
+                    "LazyVim did not auto-select and configure a native compiler"
                 )
         self.summary["preflight"] = result
         self.write_summary()
@@ -1006,13 +1012,24 @@ class Lane:
         ):
             raise LaneError("The frozen 23-parser readiness contract failed")
         if self.args.lane == "windows":
+            preflight = result.get("preflight") or {}
+            compiler = preflight.get("compiler") or {}
+            kind = compiler.get("kind")
+            no_defaults = result.get("after", {}).get("CRATE_CC_NO_DEFAULTS")
+            environment_ok = (
+                kind == "msvc" and no_defaults is None
+            ) or (
+                kind == "llvm-mingw" and no_defaults == "1"
+            )
             if (
                 result.get("before", {}).get("CC") is not None
                 or result.get("before", {}).get("CRATE_CC_NO_DEFAULTS") is not None
-                or result.get("after", {}).get("CRATE_CC_NO_DEFAULTS") is not None
+                or not environment_ok
                 or not result.get("after", {}).get("CC")
             ):
-                raise LaneError("Parser install did not begin from an unset compiler environment")
+                raise LaneError(
+                    "Parser install did not use the expected native compiler environment"
+                )
         self.summary["treesitter"] = result
         self.write_summary()
         return result
