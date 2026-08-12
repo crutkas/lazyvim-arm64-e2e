@@ -20,7 +20,7 @@
     "lazyvim": {
       "repository": "crutkas/LazyVim",
       "branch": "crutkas-windows-arm64-compiler",
-      "commit": "0d773f3cb86706e101733f5ff2ef5c36d821ddd2",
+      "commit": "975e73f9455faa7960fba5e14b4c81e20fbf2716",
       "pull_request": "https://github.com/crutkas/LazyVim/pull/1"
     },
     "mason-registry": {
