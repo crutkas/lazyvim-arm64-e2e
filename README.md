@@ -1,11 +1,86 @@
 # LazyVim Windows ARM64 ecosystem E2E
 
-This repository is the transferable validation point for the Windows ARM64
-LazyVim fixes and their ecosystem dependencies. Clone it on an **x64 Windows
-machine**, run one command, and get an end-to-end regression result plus ARM64
-release-artifact inspection.
+This repository validates the Windows ARM64 LazyVim fixes and their ecosystem
+dependencies on native Windows ARM64, WSL2 Linux ARM64, and x64 Windows. The
+native runners provision immutable, hash-verified tools and use isolated
+Neovim state; they do not modify the user's normal Neovim profile.
 
-## Quick start on x64 Windows
+## Native Windows ARM64 quick start
+
+Prerequisites:
+
+- A physical Windows 11 ARM64 device running native ARM64 PowerShell.
+- PowerShell 7 or Windows PowerShell 5.1.
+- Internet access and at least 12 GB of free disk space.
+- No host Git, Python, Neovim, or compiler installation is required.
+
+Run the complete fork lane with a new, unique ID:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\run-windows.ps1 -Profile Fork -RunId win-a64-fork-<unique> -Runs 10 -Warmups 3
+```
+
+`run-windows.ps1` downloads and hash-verifies native ARM64 MinGit 2.53.0.4,
+Python 3.14.6 plus pinned PyYAML, Neovim 0.12.4, and LLVM-MinGW 20260616.
+Every run extracts these tools into a new run-scoped directory and verifies the
+expected executable hashes. The fork profile also verifies every file in the
+four pinned Mason release assets and requires the installed payloads to match
+before any tool executes. It prepares exact source checkouts and shell-free
+frozen Git object stores, then invokes `harness/run_lane.py` with `--lane windows`,
+`--expected-architecture arm64`, `--mason-target win_arm64`, a short work
+root, an isolated XDG tree, the provisioning Git trace, and `--forbid-shell`.
+The immutable archive identities are in `tools.json`; ecosystem pins are in
+`manifest.json`.
+
+Run the supported-default control separately:
+
+```powershell
+.\run-windows.ps1 -Profile Control -RunId win-a64-control-<unique> -Runs 10 -Warmups 3
+```
+
+The control uses the frozen base lock and pinned upstream Mason registry. It
+exits zero only when all 32 plugin commits are exact and clean and the expected
+current limitation is reproduced: StyLua, shfmt, LuaLS, and tree-sitter have
+no upstream `win_arm64` targets. The details are written to
+`out/<RunId>/control-result.json`; this expected failure is never mixed with
+fork-lane success.
+
+Every ID must be unique. A run refuses to overwrite an existing work or
+evidence directory. Functional evidence is written to `out/<RunId>/`, while
+download/source/toolchain identities and provisioning traces are written to
+`out/<RunId>-provisioning/`.
+
+## WSL2 Linux ARM64 regression
+
+The wrapper requires an ARM64 Ubuntu WSL2 distribution. It copies the working
+tree through `/mnt/c` into a unique directory under `/root`, then runs only
+from the Linux ext4 filesystem as root:
+
+```powershell
+.\run-wsl-arm64.ps1 -Distribution Ubuntu -RunId wsl-a64-fork-<unique> -Runs 10 -Warmups 3
+```
+
+The Linux runner starts from an empty allowlisted environment, provisions
+`build-essential` and `unzip`, and creates fresh run-scoped copies of
+hash-verified Linux ARM64 Neovim and yq. It audits every retained environment
+value and rejects any active `/mnt` path, Windows interoperability variable,
+Windows-mounted gate path, trace contamination, or non-ARM64 executable.
+Linux evidence is retained under `/root/.../out/` and copied back to the
+repository's `out/` directory.
+
+## Current native result
+
+The 2026-08-18 physical-device run passed the complete Windows fork lane and
+the WSL2 ARM64 regression. The supported-default Windows control reproduced
+the four expected missing-target failures. Exact commands, pins, metrics,
+exclusions, and evidence paths are in
+[`reference/ARM64_RESULTS.md`](reference/ARM64_RESULTS.md).
+
+## x64-only portable regression
+
+`test.ps1` is x64-only. It must not be used as evidence that ARM64 binaries
+executed natively.
 
 Prerequisites:
 
@@ -116,10 +191,12 @@ native ARM64 results are retained under `reference/`.
 uploads its evidence. Local and CI validation therefore use the same entry
 point.
 
-## Scope limitation
+## Performance scope limitation
 
 The validated Windows ARM64 E2E uses shell-free preseeded Git objects for its
-native-only correctness lane. Normal online Windows plugin-install performance
-is still unsigned because the current Git for Windows ARM64 package executes
-bundled x64 `sh.exe`. The x64 regression run is unaffected because that shell is
-native on an x64 host.
+native-only correctness lane. Its setup/readiness samples are valid for that
+frozen-object workflow, but they are not normal clean online plugin-install
+measurements. Current Git for Windows ARM64 HTTPS operations can execute
+bundled x64 MSYS shell components, so any such trace is excluded from native
+sign-off. The x64 regression is unaffected because those components are native
+to its x64 host.

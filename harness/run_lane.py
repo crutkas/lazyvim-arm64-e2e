@@ -10,6 +10,7 @@ import json
 import math
 import os
 import platform
+import re
 import shutil
 import statistics
 import struct
@@ -23,11 +24,21 @@ from typing import Any, Iterable
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
-LOCKFILE = SCRIPT_DIR / "lazy-lock-e2e.json"
+E2E_LOCKFILE = SCRIPT_DIR / "lazy-lock-e2e.json"
 BASE_LOCKFILE = REPO_ROOT / "fixtures" / "lazy-lock.json"
+MANIFEST_PATH = REPO_ROOT / "manifest.json"
+MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 STARTER_COMMIT = "803bc181d7c0d6d5eeba9274d9be49b287294d99"
-LAZYVIM_COMMIT = "975e73f9455faa7960fba5e14b4c81e20fbf2716"
-TREESITTER_COMMIT = "61c17a841e9295716e441a42d88c93431a100890"
+STARTER_URL = "https://github.com/LazyVim/starter.git"
+UPSTREAM_LAZYVIM_URL = "https://github.com/LazyVim/LazyVim.git"
+UPSTREAM_TREESITTER_URL = "https://github.com/nvim-treesitter/nvim-treesitter.git"
+FORK_LAZYVIM_URL = (
+    f"https://github.com/{MANIFEST['components']['lazyvim']['repository']}.git"
+)
+FORK_TREESITTER_URL = (
+    "https://github.com/"
+    f"{MANIFEST['components']['nvim-treesitter']['repository']}.git"
+)
 MASON_PACKAGES = ("stylua", "shfmt", "lua-language-server", "tree-sitter-cli")
 DEFAULT_PARSERS = (
     "bash",
@@ -100,7 +111,7 @@ def path_uri(path: Path) -> str:
 
 
 def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def binary_architecture(path: Path) -> dict[str, Any] | None:
@@ -151,6 +162,16 @@ class LaneError(RuntimeError):
 class Lane:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
+        self.lockfile = BASE_LOCKFILE if args.profile == "control" else E2E_LOCKFILE
+        self.lock = read_json(self.lockfile)
+        self.lazyvim_url = (
+            UPSTREAM_LAZYVIM_URL if args.profile == "control" else FORK_LAZYVIM_URL
+        )
+        self.treesitter_url = (
+            UPSTREAM_TREESITTER_URL
+            if args.profile == "control"
+            else FORK_TREESITTER_URL
+        )
         self.work_root = args.work_root.resolve()
         self.evidence = args.evidence_dir.resolve()
         self.logs = self.evidence / "logs"
@@ -173,6 +194,7 @@ class Lane:
             "schema_version": 1,
             "label": args.label,
             "lane": args.lane,
+            "profile": args.profile,
             "plugin_source_mode": args.plugin_source_mode,
             "started_at": utc_now(),
             "result": "running",
@@ -187,6 +209,17 @@ class Lane:
                 "lazyvim_source": str(args.lazyvim_source),
                 "treesitter_source": str(args.treesitter_source),
                 "mason_registry": args.mason_registry,
+                "lockfile": str(self.lockfile),
+                "additional_git_trace": (
+                    str(args.additional_git_trace.resolve())
+                    if args.additional_git_trace
+                    else None
+                ),
+                "mason_artifact_validation": (
+                    str(args.mason_artifact_validation.resolve())
+                    if args.mason_artifact_validation
+                    else None
+                ),
             },
             "host": {
                 "machine": platform.machine(),
@@ -249,9 +282,11 @@ class Lane:
                 )
             )
         else:
+            env.pop("WSL_INTEROP", None)
+            env.pop("WSLENV", None)
             path_entries = [
                 str(self.args.nvim.parent),
-                "/root/.local/lvb-arm64-tools/bin",
+                str(self.args.support_bin),
                 "/usr/local/sbin",
                 "/usr/local/bin",
                 "/usr/sbin",
@@ -278,12 +313,12 @@ class Lane:
                 "LVB_E2E_MASON_REGISTRY": self.args.mason_registry,
                 "LVB_E2E_MASON_TARGET": self.args.mason_target,
                 "LVB_E2E_LAZYVIM_URL": (
-                    "https://github.com/crutkas/LazyVim.git"
+                    self.lazyvim_url
                     if self.args.lane == "windows"
                     else path_uri(self.args.lazyvim_source)
                 ),
                 "LVB_E2E_TREESITTER_URL": (
-                    "https://github.com/crutkas/nvim-treesitter.git"
+                    self.treesitter_url
                     if self.args.lane == "windows"
                     else path_uri(self.args.treesitter_source)
                 ),
@@ -298,12 +333,12 @@ class Lane:
             rewrites = (
                 (
                     path_uri(self.args.starter_source),
-                    "https://github.com/LazyVim/starter.git",
+                    STARTER_URL,
                 ),
-                (path_uri(self.args.lazyvim_source), "https://github.com/crutkas/LazyVim.git"),
+                (path_uri(self.args.lazyvim_source), self.lazyvim_url),
                 (
                     path_uri(self.args.treesitter_source),
-                    "https://github.com/crutkas/nvim-treesitter.git",
+                    self.treesitter_url,
                 ),
                 (path_uri(self.args.git_cache), "https://github.com/"),
             )
@@ -329,17 +364,25 @@ class Lane:
             self.args.starter_source,
             self.args.lazyvim_source,
             self.args.treesitter_source,
-            LOCKFILE,
+            self.lockfile,
             BASE_LOCKFILE,
+            E2E_LOCKFILE,
+            MANIFEST_PATH,
         )
+        if self.args.additional_git_trace:
+            required_paths += (self.args.additional_git_trace,)
+        if self.args.mason_artifact_validation:
+            required_paths += (self.args.mason_artifact_validation,)
+        if self.args.support_bin:
+            required_paths += (self.args.support_bin,)
         missing = [str(path) for path in required_paths if not path.exists()]
         if missing:
             raise LaneError(f"Required paths are missing: {missing}")
+        if not self.args.support_bin or not self.args.support_bin.is_dir():
+            raise LaneError("--support-bin must name an existing directory")
         if self.args.lane == "windows":
             if not self.args.compiler_bin.is_dir():
                 raise LaneError(f"Compiler bin directory is missing: {self.args.compiler_bin}")
-            if not self.args.support_bin:
-                raise LaneError("--support-bin is required for Windows")
         for directory in (
             self.work_root,
             self.logs,
@@ -361,29 +404,35 @@ class Lane:
         }
         self.summary["inputs"] = {
             "base_lock_sha256": file_sha256(BASE_LOCKFILE),
-            "e2e_lock_sha256": file_sha256(LOCKFILE),
-            "e2e_lock_plugins": len(read_json(LOCKFILE)),
+            "e2e_lock_sha256": file_sha256(E2E_LOCKFILE),
+            "selected_lock_sha256": file_sha256(self.lockfile),
+            "selected_lock_plugins": len(self.lock),
         }
         self.write_summary()
 
     def validate_lock_delta(self) -> None:
         base = read_json(BASE_LOCKFILE)
-        derived = read_json(LOCKFILE)
-        if set(base) != set(derived) or len(derived) != 32:
-            raise LaneError("E2E lock must preserve the exact 32-plugin key set")
+        selected = self.lock
+        if set(base) != set(selected) or len(selected) != 32:
+            raise LaneError("Selected lock must preserve the exact 32-plugin key set")
         changes = []
         for name in sorted(base):
-            if base[name] != derived[name]:
+            if base[name] != selected[name]:
                 changes.append(
                     {
                         "plugin": name,
                         "before": base[name],
-                        "after": derived[name],
+                        "after": selected[name],
                     }
                 )
+        if self.args.profile == "control":
+            if changes:
+                raise LaneError(f"Control lock unexpectedly differs from base: {changes}")
+            self.summary["lock_delta"] = []
+            return
         expected = {
-            "LazyVim": LAZYVIM_COMMIT,
-            "nvim-treesitter": TREESITTER_COMMIT,
+            "LazyVim": MANIFEST["components"]["lazyvim"]["commit"],
+            "nvim-treesitter": MANIFEST["components"]["nvim-treesitter"]["commit"],
         }
         if {item["plugin"] for item in changes} != set(expected):
             raise LaneError(f"Unexpected E2E lock delta: {changes}")
@@ -471,8 +520,11 @@ class Lane:
     def verify_components(self) -> None:
         expected = (
             (self.args.starter_source, STARTER_COMMIT),
-            (self.args.lazyvim_source, LAZYVIM_COMMIT),
-            (self.args.treesitter_source, TREESITTER_COMMIT),
+            (self.args.lazyvim_source, self.lock["LazyVim"]["commit"]),
+            (
+                self.args.treesitter_source,
+                self.lock["nvim-treesitter"]["commit"],
+            ),
         )
         components = []
         for path, commit in expected:
@@ -633,7 +685,7 @@ class Lane:
         )
 
     def materialize_plugins(self) -> None:
-        lock = read_json(LOCKFILE)
+        lock = self.lock
         manifest = read_json(self.args.git_cache / "manifest.json")
         repositories = {item["name"]: item for item in manifest["repositories"]}
         started = time.perf_counter()
@@ -642,16 +694,18 @@ class Lane:
         for name, lock_entry in sorted(lock.items()):
             if name == "LazyVim":
                 source = self.args.lazyvim_source
-                origin = "https://github.com/crutkas/LazyVim.git"
+                origin = self.lazyvim_url
             elif name == "nvim-treesitter":
                 source = self.args.treesitter_source
-                origin = "https://github.com/crutkas/nvim-treesitter.git"
+                origin = self.treesitter_url
             else:
                 item = repositories.get(name)
                 if not item:
                     raise LaneError(f"Frozen cache manifest has no source for {name}")
                 origin = item["url"]
                 relative = origin.split("https://github.com/", 1)[1]
+                if relative.endswith(".git"):
+                    relative = relative[:-4]
                 source = self.args.git_cache / Path(relative)
             destination = self.lazy_root / name
             output.append(
@@ -680,7 +734,7 @@ class Lane:
         )
 
     def configure(self) -> None:
-        preseeded = self.args.lane == "windows" and self.args.plugin_source_mode == "preseeded"
+        preseeded = self.args.plugin_source_mode == "preseeded"
         if preseeded:
             self.materialize_starter()
         else:
@@ -722,28 +776,32 @@ class Lane:
                     STARTER_COMMIT,
                 ],
             )
-        shutil.copy2(LOCKFILE, self.config_dir / "lazy-lock.json")
+        shutil.copy2(self.lockfile, self.config_dir / "lazy-lock.json")
         plugin_dir = self.config_dir / "lua" / "plugins"
         plugin_dir.mkdir(parents=True, exist_ok=True)
-        (plugin_dir / "arm64-e2e.lua").write_text(
-            """return {
-  {
+        fork_overrides = ""
+        if self.args.profile == "fork":
+            fork_overrides = f"""  {{
     "LazyVim/LazyVim",
-    branch = "crutkas-windows-arm64-compiler",
+    branch = "{MANIFEST['components']['lazyvim']['branch']}",
     url = assert(vim.env.LVB_E2E_LAZYVIM_URL),
-  },
-  {
+  }},
+  {{
     "nvim-treesitter/nvim-treesitter",
-    branch = "crutkas-fix-windows-parser-install",
+    branch = "{MANIFEST['components']['nvim-treesitter']['branch']}",
     url = assert(vim.env.LVB_E2E_TREESITTER_URL),
-  },
-  {
+  }},
+"""
+        (plugin_dir / "arm64-e2e.lua").write_text(
+            f"""return {{
+{fork_overrides}
+  {{
     "mason-org/mason.nvim",
     opts = function(_, opts)
-      opts.registries = { assert(vim.env.LVB_E2E_MASON_REGISTRY) }
+      opts.registries = {{ assert(vim.env.LVB_E2E_MASON_REGISTRY) }}
     end,
-  },
-}
+  }},
+}}
 """,
             encoding="utf-8",
             newline="\n",
@@ -780,7 +838,7 @@ class Lane:
             raise LaneError("Plugin bootstrap exhausted all network retries")
 
     def validate_plugins(self) -> None:
-        expected = read_json(LOCKFILE)
+        expected = self.lock
         installed_lock = self.config_dir / "lazy-lock.json"
         observed = read_json(installed_lock)
         if set(observed) != set(expected):
@@ -809,7 +867,7 @@ class Lane:
             "commit_drift": commit_drift,
             "observed_sha256": file_sha256(installed_lock),
         }
-        shutil.copy2(LOCKFILE, installed_lock)
+        shutil.copy2(self.lockfile, installed_lock)
         self.summary["runtime_lock_observation"]["fixture_restored_sha256"] = file_sha256(
             installed_lock
         )
@@ -849,7 +907,7 @@ class Lane:
     def reconcile_online_lock(self) -> None:
         if self.args.plugin_source_mode != "online":
             return
-        expected = read_json(LOCKFILE)
+        expected = self.lock
         runtime_lock = self.config_dir / "lazy-lock.json"
         observed = read_json(runtime_lock)
         drift = {
@@ -865,7 +923,7 @@ class Lane:
         self.write_summary()
         if not drift:
             return
-        shutil.copy2(LOCKFILE, runtime_lock)
+        shutil.copy2(self.lockfile, runtime_lock)
         attempts = self.args.network_retries + 1
         restore_result = None
         for attempt in range(1, attempts + 1):
@@ -917,28 +975,118 @@ class Lane:
             "mason_install.lua",
             "mason-install.json",
             timeout=self.args.timeout + 60,
+            check=False,
         )
         failures = [
             name
             for name in MASON_PACKAGES
             if result.get("results", {}).get(name, {}).get("success") is not True
         ]
+        self.summary["mason"] = result
+        self.write_summary()
         if (
             result.get("completed") is not True
             or result.get("fatal") is not None
             or failures
             or result.get("target") != self.args.mason_target
         ):
+            if self.args.profile == "control" and self.args.lane == "windows":
+                self.audit_git_execution()
             raise LaneError(f"Mason {self.args.mason_target} gate failed for: {failures}")
         for package in MASON_PACKAGES:
             receipt = self.mason_root / "packages" / package / "mason-receipt.json"
             if not receipt.is_file():
                 raise LaneError(f"Mason receipt is missing for {package}")
             shutil.copy2(receipt, self.receipts / f"{package}.json")
+        self.verify_mason_artifact_integrity()
         self.env["PATH"] = os.pathsep.join((str(self.mason_root / "bin"), self.env["PATH"]))
-        self.summary["mason"] = result
-        self.write_summary()
         return result
+
+    def verify_mason_artifact_integrity(self) -> None:
+        validation_path = self.args.mason_artifact_validation
+        if not validation_path:
+            if (
+                self.args.lane == "windows"
+                and self.args.profile == "fork"
+                and self.args.expected_architecture == "arm64"
+            ):
+                raise LaneError(
+                    "Windows fork runs require hash-verified Mason artifact validation"
+                )
+            return
+
+        validation = read_json(validation_path)
+        if validation.get("passed") is not True:
+            raise LaneError("The pinned Mason artifact validation did not pass")
+        components = {
+            component.get("component"): component
+            for component in validation.get("components", [])
+        }
+        if set(components) != set(MASON_PACKAGES):
+            raise LaneError("Mason artifact validation has an unexpected component set")
+
+        package_results = {}
+        for package in MASON_PACKAGES:
+            component = components[package]
+            manifest_component = MANIFEST["components"][package]
+            if (
+                component.get("asset") != manifest_component["asset"]
+                or component.get("archive_sha256", "").lower()
+                != manifest_component["sha256"].lower()
+            ):
+                raise LaneError(f"Mason artifact identity mismatch for {package}")
+
+            expected_files = {}
+            for record in component.get("files", []):
+                relative = str(record.get("path", "")).replace("\\", "/").casefold()
+                if not relative or relative in expected_files:
+                    raise LaneError(
+                        f"Mason artifact file inventory is invalid for {package}"
+                    )
+                expected_files[relative] = record
+            if not expected_files:
+                raise LaneError(f"Mason artifact file inventory is empty for {package}")
+
+            package_root = self.mason_root / "packages" / package
+            installed_files = {
+                str(path.relative_to(package_root)).replace("\\", "/").casefold(): path
+                for path in package_root.rglob("*")
+                if path.is_file()
+            }
+            allowed_additional = {"mason-receipt.json"}
+            if package == "lua-language-server":
+                allowed_additional.add("mason-schemas/lsp.json")
+            missing = sorted(set(expected_files) - set(installed_files))
+            additional = sorted(
+                set(installed_files) - set(expected_files) - allowed_additional
+            )
+            changed = sorted(
+                relative
+                for relative, record in expected_files.items()
+                if relative in installed_files
+                and (
+                    installed_files[relative].stat().st_size != int(record["bytes"])
+                    or file_sha256(installed_files[relative])
+                    != str(record["sha256"]).lower()
+                )
+            )
+            package_results[package] = {
+                "additional_files": additional,
+                "archive_sha256": component["archive_sha256"].lower(),
+                "changed_files": changed,
+                "expected_file_count": len(expected_files),
+                "missing_files": missing,
+                "passed": not (missing or additional or changed),
+            }
+            if missing or additional or changed:
+                raise LaneError(
+                    f"Installed Mason payload differs from the verified {package} asset"
+                )
+
+        result = {"passed": True, "packages": package_results}
+        atomic_json(self.artifacts / "mason-asset-integrity.json", result)
+        self.summary["mason_asset_integrity"] = result
+        self.write_summary()
 
     def find_package_binary(self, package: str) -> Path:
         root = self.mason_root / "packages" / package
@@ -1251,7 +1399,7 @@ class Lane:
         )
 
         resolved_tools = []
-        tool_names = (
+        tool_names = [
             ("python", sys.executable),
             ("nvim", str(self.args.nvim)),
             ("git", str(self.args.git)),
@@ -1266,7 +1414,14 @@ class Lane:
             ("powershell", shutil.which("powershell", path=self.env["PATH"])),
             ("pwsh", shutil.which("pwsh", path=self.env["PATH"])),
             ("yq", shutil.which("yq", path=self.env["PATH"])),
-        )
+        ]
+        if self.args.lane == "wsl":
+            tool_names.extend(
+                (
+                    ("make", shutil.which("make", path=self.env["PATH"])),
+                    ("unzip", shutil.which("unzip", path=self.env["PATH"])),
+                )
+            )
         for name, value in tool_names:
             if not value:
                 continue
@@ -1412,7 +1567,7 @@ class Lane:
     def snapshot_config(self) -> None:
         lockfile = self.config_dir / "lazy-lock.json"
         self.summary["final_runtime_lock_sha256"] = file_sha256(lockfile)
-        shutil.copy2(LOCKFILE, lockfile)
+        shutil.copy2(self.lockfile, lockfile)
         self.summary["final_fixture_lock_sha256"] = file_sha256(lockfile)
         for source in (
             self.config_dir / "init.lua",
@@ -1438,19 +1593,38 @@ class Lane:
             if source.is_file():
                 shutil.copy2(source, self.logs / name)
 
-    def audit_git_execution(self) -> None:
-        if self.args.lane != "windows":
-            return
-        trace_path = self.logs / "git-trace.jsonl"
+    def git_trace_paths(self) -> list[Path]:
+        paths = [self.logs / "git-trace.jsonl"]
+        if self.args.additional_git_trace:
+            paths.append(self.args.additional_git_trace.resolve())
+        return paths
+
+    def read_git_trace_events(self) -> list[dict[str, Any]]:
         events = []
-        for line_number, line in enumerate(trace_path.read_text(encoding="utf-8").splitlines(), 1):
-            if not line.strip():
-                continue
-            try:
-                event = json.loads(line)
-            except json.JSONDecodeError as error:
-                raise LaneError(f"Invalid Git trace JSON at line {line_number}: {error}") from error
-            events.append(event)
+        for trace_path in self.git_trace_paths():
+            for line_number, line in enumerate(
+                trace_path.read_text(encoding="utf-8").splitlines(), 1
+            ):
+                if not line.strip():
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError as error:
+                    raise LaneError(
+                        f"Invalid Git trace JSON in {trace_path} at line "
+                        f"{line_number}: {error}"
+                    ) from error
+                event["_trace"] = str(trace_path)
+                events.append(event)
+        return events
+
+    def audit_git_execution(self) -> None:
+        events = self.read_git_trace_events()
+        if self.args.additional_git_trace:
+            shutil.copy2(
+                self.args.additional_git_trace,
+                self.logs / "provisioning-git-trace.jsonl",
+            )
 
         shell_children = []
         shell_ancestry = []
@@ -1472,29 +1646,54 @@ class Lane:
             else None
         )
         for event in events:
-            if event.get("event") == "child_start" and event.get("use_shell") is True:
-                shell_children.append(event)
-            if event.get("event") == "cmd_ancestry":
+            event_name = event.get("event")
+            ancestry = None
+            if event_name == "cmd_ancestry":
                 ancestry = [str(item) for item in event.get("ancestry", [])]
-                if any(item.lower() in {"sh.exe", "bash.exe"} for item in ancestry):
+            elif (
+                event_name == "data_json"
+                and event.get("key") == "windows/ancestry"
+            ):
+                ancestry = [str(item) for item in event.get("value", [])]
+            if ancestry is not None:
+                if any(
+                    Path(item).name.lower() in {"sh.exe", "bash.exe"}
+                    for item in ancestry
+                ):
                     shell_ancestry.append(event)
-            if event.get("event") != "start":
+            if event_name not in {"start", "child_start"}:
                 continue
             argv = event.get("argv") or []
+            if isinstance(argv, str):
+                argv = [argv]
             if not argv:
                 continue
             command = str(argv[0])
+            command_name = Path(command.strip('"')).name.lower()
+            if event_name == "child_start" and (
+                event.get("use_shell") is True
+                or command_name in {"sh", "sh.exe", "bash", "bash.exe"}
+            ):
+                shell_children.append(event)
             resolved = command
             if not Path(command).is_file():
                 found = shutil.which(command, path=self.env["PATH"])
                 if found:
                     resolved = found
                 elif git_exec_path and command.lower().startswith("git-"):
-                    candidate = git_exec_path / (
+                    executable = (
                         command if command.lower().endswith(".exe") else command + ".exe"
                     )
-                    if candidate.is_file():
-                        resolved = str(candidate)
+                    git_root = self.args.git.parent.parent
+                    candidates = (
+                        git_exec_path / executable,
+                        git_root / "clangarm64" / "bin" / executable,
+                        git_root / "mingw64" / "bin" / executable,
+                    )
+                    for candidate in candidates:
+                        if candidate.is_file():
+                            resolved = str(candidate)
+                            break
             path = Path(resolved)
             architecture = binary_architecture(path) if path.is_file() else None
             executables[str(path)] = {
@@ -1518,6 +1717,7 @@ class Lane:
             "passed": not shell_violation and not wrong,
             "shell_ancestry": shell_ancestry,
             "shell_children": shell_children,
+            "traces": [str(path) for path in self.git_trace_paths()],
             "wrong_architecture": wrong,
         }
         atomic_json(self.artifacts / "git-execution-audit.json", result)
@@ -1534,6 +1734,138 @@ class Lane:
             raise LaneError(
                 "Git execution trace detected a forbidden shell or wrong-architecture execution"
             )
+
+    @staticmethod
+    def is_windows_contaminated(value: str) -> bool:
+        normalized = value.replace("\\", "/")
+        lowered = normalized.lower()
+        return (
+            lowered == "/mnt"
+            or lowered.startswith("/mnt/")
+            or "/mnt/" in lowered
+            or re.search(r"(^|[=\"' ])/[a-z]/", lowered) is not None
+            or re.search(r"(^|[=\"' ])/[mnt]/[a-z]/", lowered) is not None
+            or re.search(r"(^|[=\"' ])[a-z]:/", lowered) is not None
+        )
+
+    def audit_wsl_placement(self) -> None:
+        configured_paths: dict[str, Path] = {
+            "cache": self.cache_home,
+            "config": self.config_home,
+            "cwd": Path.cwd(),
+            "data": self.data_home,
+            "evidence": self.evidence,
+            "git": self.args.git,
+            "git_cache": self.args.git_cache,
+            "harness": REPO_ROOT,
+            "lazyvim_source": self.args.lazyvim_source,
+            "nvim": self.args.nvim,
+            "project": self.fixture,
+            "python": Path(sys.executable),
+            "starter_source": self.args.starter_source,
+            "state": self.state_home,
+            "support_bin": self.args.support_bin,
+            "treesitter_source": self.args.treesitter_source,
+            "work": self.work_root,
+        }
+        for command in ("cc", "gcc"):
+            resolved = shutil.which(command, path=self.env["PATH"])
+            if resolved:
+                configured_paths[command] = Path(resolved)
+        tool_bundle = Path("/root/.local/lvb-arm64-tools")
+        if tool_bundle.exists():
+            configured_paths["tool_bundle"] = tool_bundle
+
+        complete_environment = dict(os.environ)
+        environment = {
+            "PATH": os.environ.get("PATH"),
+            "WSLENV": os.environ.get("WSLENV"),
+            "WSL_INTEROP": os.environ.get("WSL_INTEROP"),
+        }
+        environment_hits = [
+            {"name": name}
+            for name, value in complete_environment.items()
+            if value
+            and (
+                name in {"WSLENV", "WSL_INTEROP"}
+                or self.is_windows_contaminated(value)
+            )
+        ]
+
+        active_paths: set[str] = set()
+        recursive_hits = []
+        for root in configured_paths.values():
+            resolved_root = root.resolve()
+            candidates = [resolved_root]
+            if resolved_root.is_dir():
+                candidates.extend(resolved_root.rglob("*"))
+            for path in candidates:
+                value = str(path)
+                active_paths.add(value)
+                if self.is_windows_contaminated(value):
+                    recursive_hits.append(value)
+
+        trace_hits = []
+        trace_event_count = 0
+        for event in self.read_git_trace_events():
+            trace_event_count += 1
+            serialized = json.dumps(event, sort_keys=True)
+            if self.is_windows_contaminated(serialized):
+                trace_hits.append(event)
+
+        mounts = {}
+        invalid_mounts = []
+        for name, path in configured_paths.items():
+            completed = subprocess.run(
+                [
+                    "findmnt",
+                    "--json",
+                    "--output",
+                    "SOURCE,TARGET,FSTYPE,OPTIONS",
+                    "--target",
+                    str(path),
+                ],
+                env=self.env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=30,
+                check=False,
+            )
+            if completed.returncode != 0:
+                raise LaneError(f"findmnt failed for {name}: {completed.stderr.strip()}")
+            filesystems = json.loads(completed.stdout).get("filesystems") or []
+            if not filesystems:
+                raise LaneError(f"findmnt returned no filesystem for {name}: {path}")
+            mount = filesystems[0]
+            mounts[name] = {"path": str(path.resolve()), **mount}
+            if str(mount.get("fstype", "")).lower() in {"9p", "drvfs"}:
+                invalid_mounts.append(name)
+
+        result = {
+            "accepted": not (
+                environment_hits
+                or recursive_hits
+                or trace_hits
+                or invalid_mounts
+            ),
+            "active_path_count": len(active_paths),
+            "environment": environment,
+            "environment_hits": environment_hits,
+            "environment_variable_count": len(complete_environment),
+            "git_trace_event_count": trace_event_count,
+            "invalid_mounts": invalid_mounts,
+            "mounts": mounts,
+            "recursive_forbidden_hits": recursive_hits,
+            "trace_forbidden_hits": trace_hits,
+        }
+        atomic_json(self.artifacts / "wsl-placement.json", result)
+        self.summary["placement"] = result
+        self.write_summary()
+        if not result["accepted"]:
+            raise LaneError("WSL placement or Windows interoperability contamination gate failed")
 
     def run(self) -> None:
         self.prepare()
@@ -1570,8 +1902,12 @@ class Lane:
         }
         self.write_summary()
         self.benchmark_startup()
-        self.audit_git_execution()
-        self.summary["readiness_gates"]["git_no_emulation"] = True
+        if self.args.lane == "windows":
+            self.audit_git_execution()
+            self.summary["readiness_gates"]["git_no_emulation"] = True
+        else:
+            self.audit_wsl_placement()
+            self.summary["readiness_gates"]["wsl_placement"] = True
         self.snapshot_config()
         self.collect_runtime_logs()
         self.summary["finished_at"] = utc_now()
@@ -1582,6 +1918,7 @@ class Lane:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lane", choices=("windows", "wsl"), required=True)
+    parser.add_argument("--profile", choices=("control", "fork"), default="fork")
     parser.add_argument("--label", required=True)
     parser.add_argument("--work-root", required=True, type=Path)
     parser.add_argument("--evidence-dir", required=True, type=Path)
@@ -1604,6 +1941,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warmups", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--distribution-diagnostics", action="store_true")
+    parser.add_argument("--additional-git-trace", type=Path)
+    parser.add_argument("--mason-artifact-validation", type=Path)
     parser.add_argument(
         "--forbid-shell",
         action="store_true",

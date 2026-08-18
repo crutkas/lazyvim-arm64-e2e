@@ -81,14 +81,27 @@ foreach ($name in $components) {
         @(Get-Item -LiteralPath $scanRoot)
     }
     $peFiles = @()
+    $fileRecords = @()
     foreach ($file in $files) {
+        $relativePath = if ((Get-Item -LiteralPath $scanRoot).PSIsContainer) {
+            $file.FullName.Substring($scanRoot.Length).TrimStart("\").Replace("\", "/")
+        }
+        else {
+            $file.Name
+        }
+        $sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        $fileRecords += [ordered]@{
+            path = $relativePath
+            bytes = $file.Length
+            sha256 = $sha256
+        }
         $machine = Get-PeMachine -Path $file.FullName
         if ($null -ne $machine) {
             $peFiles += [ordered]@{
                 path = $file.FullName
                 bytes = $file.Length
                 machine = "0x{0:X4}" -f $machine
-                sha256 = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+                sha256 = $sha256
             }
         }
     }
@@ -104,6 +117,7 @@ foreach ($name in $components) {
         asset = $component.asset
         archive = $assetPath
         archive_sha256 = $component.sha256.ToLowerInvariant()
+        files = $fileRecords
         pe_files = $peFiles
     }
 }
@@ -117,5 +131,7 @@ $result = [ordered]@{
     components = $records
 }
 $resultPath = Join-Path $OutputDirectory "artifact-validation.json"
-$result | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $resultPath -Encoding utf8
+$json = $result | ConvertTo-Json -Depth 8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($resultPath, $json + [Environment]::NewLine, $utf8NoBom)
 Write-Host "ARM64 artifact validation passed: $resultPath"

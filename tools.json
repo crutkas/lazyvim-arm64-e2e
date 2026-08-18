@@ -13,5 +13,62 @@
     "sha256": "b9b68a4d276e16fa25802aaba458e4638f64b3884c290aaccdc2d87083b6ca35",
     "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-x86_64.zip",
     "version": "20260616"
-  }
+  },
+  "windows_arm64": {
+    "git": {
+      "archive": "MinGit-2.53.0.4-arm64.zip",
+      "binary_sha256": "7f2d8f209c65b27a1cb6ae388b59877afcf5d17e67d04ba7b4a237849380d1e2",
+      "bytes": 38910590,
+      "sha256": "e1898dbb750804e13472a0e4170ade581516df3ff47ddb5b5503cbfa574b3624",
+      "url": "https://github.com/git-for-windows/git/releases/download/v2.53.0.windows.4/MinGit-2.53.0.4-arm64.zip",
+      "version": "2.53.0.windows.4"
+    },
+    "llvm_mingw": {
+      "archive": "llvm-mingw-20260616-ucrt-aarch64.zip",
+      "binary_sha256": "8d6c2e0470f152fe5b4a8023764cfa290d92f43b587ec7e000de3160261065dc",
+      "bytes": 181877750,
+      "sha256": "312593669435bd0bfc1a43ac3fba23c8b27e0610bade88b2738e5a01702a99ba",
+      "url": "https://github.com/mstorsjo/llvm-mingw/releases/download/20260616/llvm-mingw-20260616-ucrt-aarch64.zip",
+      "version": "20260616"
+    },
+    "neovim": {
+      "archive": "nvim-win-arm64.zip",
+      "binary_sha256": "c74025b5a2b74cbcda396fea847ba35bc5bd1598f0ca4207ed640b76db24a638",
+      "bytes": 13000502,
+      "sha256": "49906085a3c473ee87a28319942c62216fb365a1a1a4f83dbc4ac41365f5e609",
+      "url": "https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-win-arm64.zip",
+      "version": "0.12.4"
+    },
+    "python": {
+      "archive": "python-3.14.6-embed-arm64.zip",
+      "binary_sha256": "7e402261031efd4524809c57a1759cda1c8ba334fb498184fa13b8ca2bc98c29",
+      "bytes": 11892650,
+      "sha256": "0a7e80914709a9f3ebfccdb9d1d02a37e4ddb69bb7f80d6df1a7e95d54af9e58",
+      "url": "https://www.python.org/ftp/python/3.14.6/python-3.14.6-embed-arm64.zip",
+      "version": "3.14.6"
+    },
+    "pyyaml": {
+      "commit": "49790e73684bebad1df05ef8d828fa12f685bffb",
+      "repository": "https://github.com/yaml/pyyaml.git",
+      "version": "6.0.3"
+    }
+  },
+  "linux_arm64": {
+    "neovim": {
+      "archive": "nvim-linux-arm64.tar.gz",
+      "binary_sha256": "d9635db0b272b7c81cd705ef0d8bbf16edfeb05b08b36b4228ab0d6a92ec384f",
+      "bytes": 11353219,
+      "sha256": "ceb7e88c6b681f0515d135dcdfad54f5eb4373b25ce6172197cd9a69c758063f",
+      "url": "https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-arm64.tar.gz",
+      "version": "0.12.4"
+    },
+    "yq": {
+      "archive": "yq_linux_arm64-4.53.3",
+      "bytes": 12845218,
+      "sha256": "578648e463a11c1b6db6010cbf41eafed6bee79466fcffa1bb446672cf7945ea",
+      "url": "https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_linux_arm64",
+      "version": "4.53.3"
+    }
+  },
+  "mason_registry_commit": "132d86ea3a73b9d76eeb6f9ee5a4d3a70f9a523b"
 }
