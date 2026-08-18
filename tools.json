@@ -51,6 +51,13 @@
       "commit": "49790e73684bebad1df05ef8d828fa12f685bffb",
       "repository": "https://github.com/yaml/pyyaml.git",
       "version": "6.0.3"
+    },
+    "yq": {
+      "archive": "yq_windows_arm64.exe",
+      "bytes": 13057536,
+      "sha256": "c80ac96ff2a8d77d452d91304e11feef8fb23239900b3d1d88f47c2ec93be970",
+      "url": "https://github.com/mikefarah/yq/releases/download/v4.53.3/yq_windows_arm64.exe",
+      "version": "4.53.3"
     }
   },
   "linux_arm64": {

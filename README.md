@@ -51,6 +51,32 @@ evidence directory. Functional evidence is written to `out/<RunId>/`, while
 download/source/toolchain identities and provisioning traces are written to
 `out/<RunId>-provisioning/`.
 
+## Use LazyVim normally on Windows ARM64
+
+The E2E runner above is for validation. To install a dedicated daily-use
+profile instead, run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\setup-windows-arm64.ps1
+```
+
+This is a one-time setup, not a benchmark. It hash-verifies and installs native
+ARM64 Neovim, MinGit, yq, and LLVM-MinGW beneath
+`%LOCALAPPDATA%\Programs\LazyVimARM64`, seeds the exact 32-plugin fork graph,
+configures the pinned ARM64 Mason registry, adds `lazyvim-arm64` to the user
+`PATH`, and opens the editor. Later, launch it from a new terminal with:
+
+```powershell
+lazyvim-arm64
+```
+
+The dedicated profile does not replace `%LOCALAPPDATA%\nvim`. Its config lives
+under `%LOCALAPPDATA%\Programs\LazyVimARM64\profile`. Automatic plugin update
+checks are disabled so the validated pins do not drift. Manual online Git
+updates remain outside the native-only sign-off because Git for Windows can
+invoke bundled x64 MSYS components during HTTPS operations.
+
 ## WSL2 Linux ARM64 regression
 
 The wrapper requires an ARM64 Ubuntu WSL2 distribution. It copies the working
