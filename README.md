@@ -5,7 +5,7 @@ dependencies on native Windows ARM64, WSL2 Linux ARM64, and x64 Windows. The
 native runners provision immutable, hash-verified tools and use isolated
 Neovim state; they do not modify the user's normal Neovim profile.
 
-## Native Windows ARM64 quick start
+## Native Windows ARM64 maintainer E2E
 
 Prerequisites:
 
@@ -53,31 +53,69 @@ download/source/toolchain identities and provisioning traces are written to
 
 ## Use LazyVim normally on Windows ARM64
 
-The E2E runner above is for validation. To install a dedicated daily-use
-profile instead, run:
+For daily use, install the standard Windows profile:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
 .\setup-windows-arm64.ps1
 ```
 
-This is a one-time setup, not a benchmark. It hash-verifies and installs native
-ARM64 Neovim, MinGit, yq, and LLVM-MinGW beneath
-`%LOCALAPPDATA%\Programs\LazyVimARM64`, seeds the exact 32-plugin fork graph,
-configures the pinned ARM64 Mason registry, adds `lazyvim-arm64` to the user
-`PATH`, and opens the editor. Later, launch it from a new terminal with:
+This is a conventional one-time setup, not a benchmark. Winget installs native
+ARM64 Neovim 0.12.4, Git for Windows, and JetBrainsMono Nerd Font. The script
+clones the LazyVim starter into `%LOCALAPPDATA%\nvim`, adds only the two
+unmerged Windows ARM64 overrides, and configures the local ARM64 Mason
+registry. Lazy itself clones plugins on their normal branches, so `:Lazy
+update` and `:Lazy sync` work normally.
+
+Launch it with the standard command:
 
 ```powershell
-lazyvim-arm64
+nvim
 ```
 
-The dedicated profile does not replace `%LOCALAPPDATA%\nvim`. Its config lives
-under `%LOCALAPPDATA%\Programs\LazyVimARM64\profile`. Automatic plugin update
-checks are disabled so the validated pins do not drift. Manual online Git
-updates remain outside the native-only sign-off because Git for Windows can
-invoke bundled x64 MSYS components during HTTPS operations.
+The setup refuses to overwrite an existing unmanaged `%LOCALAPPDATA%\nvim`
+profile. The validated first-install lock is used only to establish a known
+starting point; plugin directories are created by Lazy, not as detached E2E
+checkouts. The LazyVim and nvim-treesitter ARM64 fixes stay pinned until their
+PRs merge, while the rest of the graph can update normally.
 
-## WSL2 Linux ARM64 regression
+If the machine has no native C compiler, install one for additional
+Tree-sitter parsers:
+
+```powershell
+.\setup-windows-arm64.ps1 -InstallCompiler
+```
+
+Set Windows Terminal's font face to **JetBrainsMono Nerd Font** after setup.
+
+## Use LazyVim normally in WSL2 ARM64
+
+WSL does not use the Windows setup or E2E runner. Install native Linux packages
+and follow the standard LazyVim flow:
+
+```bash
+sudo apt update
+sudo apt install -y neovim git build-essential
+nvim --version  # must be 0.11.2 or newer
+git clone https://github.com/LazyVim/starter ~/.config/nvim
+rm -rf ~/.config/nvim/.git
+nvim
+```
+
+If the distro package is older than 0.11.2, install the official Linux ARM64
+Neovim archive instead:
+
+```bash
+curl -LO https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-arm64.tar.gz
+echo "ceb7e88c6b681f0515d135dcdfad54f5eb4373b25ce6172197cd9a69c758063f  nvim-linux-arm64.tar.gz" |
+  sha256sum -c -
+sudo tar -C /opt -xzf nvim-linux-arm64.tar.gz
+sudo ln -sf /opt/nvim-linux-arm64/bin/nvim /usr/local/bin/nvim
+```
+
+The WSL section below is a maintainer regression lane only.
+
+## WSL2 Linux ARM64 maintainer regression
 
 The wrapper requires an ARM64 Ubuntu WSL2 distribution. It copies the working
 tree through `/mnt/c` into a unique directory under `/root`, then runs only

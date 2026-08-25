@@ -1,10 +1,10 @@
 [CmdletBinding()]
 param(
-    [string]$InstallRoot = (Join-Path $env:LOCALAPPDATA "Programs\LazyVimARM64"),
-    [string]$AppName = "lazyvim-arm64",
-    [switch]$NoLaunch,
-    [switch]$NoPath,
-    [switch]$ResetProfile
+    [switch]$ResetProfile,
+    [switch]$InstallCompiler,
+    [switch]$SkipFont,
+    [switch]$SkipPackages,
+    [switch]$NoLaunch
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,95 +45,59 @@ function Assert-Arm64Pe {
     }
 }
 
-function Assert-FileHash {
+function Invoke-Native {
     param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][string]$ExpectedSha256,
-        [Parameter(Mandatory = $true)][string]$Name
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string[]]$Arguments,
+        [switch]$Capture
     )
-    $actual = (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($actual -ne $ExpectedSha256.ToLowerInvariant()) {
-        throw "$Name SHA-256 mismatch. Expected $ExpectedSha256, got $actual."
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = @(& $FilePath @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
     }
-}
-
-function Send-EnvironmentChanged {
-    if (-not ([System.Management.Automation.PSTypeName]"LazyVimArm64.NativeMethods").Type) {
-        Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-
-namespace LazyVimArm64
-{
-    public static class NativeMethods
-    {
-        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern IntPtr SendMessageTimeout(
-            IntPtr hWnd,
-            uint message,
-            UIntPtr wParam,
-            string lParam,
-            uint flags,
-            uint timeout,
-            out UIntPtr result);
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
     }
-}
-"@
+    if ($exitCode -ne 0) {
+        throw "$FilePath failed with exit code $exitCode`n$($output -join "`n")"
     }
-    $result = [UIntPtr]::Zero
-    [LazyVimArm64.NativeMethods]::SendMessageTimeout(
-        [IntPtr]0xffff,
-        0x001A,
-        [UIntPtr]::Zero,
-        "Environment",
-        0x0002,
-        5000,
-        [ref]$result
-    ) | Out-Null
-}
-
-function Test-CheckedFile {
-    param(
-        [Parameter(Mandatory = $true)][string]$Path,
-        [Parameter(Mandatory = $true)][pscustomobject]$Spec
-    )
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        return $false
+    if ($Capture) {
+        return ($output -join "`n").Trim()
     }
-    $file = Get-Item -LiteralPath $Path
-    if ($file.Length -ne [int64]$Spec.bytes) {
-        throw "Size mismatch for cached download $Path."
-    }
-    Assert-FileHash -Path $Path -ExpectedSha256 $Spec.sha256 -Name $Spec.archive
-    return $true
 }
 
 function Download-Checked {
     param(
         [Parameter(Mandatory = $true)][pscustomobject]$Spec,
-        [Parameter(Mandatory = $true)][string]$Directory
+        [Parameter(Mandatory = $true)][string]$Destination
     )
-    New-Item -ItemType Directory -Force -Path $Directory | Out-Null
-    $path = Join-Path $Directory $Spec.archive
-    if (-not (Test-CheckedFile -Path $path -Spec $Spec)) {
-        $temporary = "$path.$([guid]::NewGuid().ToString('N')).partial"
+    $parent = Split-Path $Destination -Parent
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    $valid = Test-Path -LiteralPath $Destination -PathType Leaf
+    if ($valid) {
+        $file = Get-Item -LiteralPath $Destination
+        $hash = (Get-FileHash -LiteralPath $Destination -Algorithm SHA256).Hash
+        $valid = (
+            $file.Length -eq [int64]$Spec.bytes -and
+            $hash -eq $Spec.sha256
+        )
+    }
+    if (-not $valid) {
+        $temporary = "$Destination.$([guid]::NewGuid().ToString('N')).partial"
         try {
-            Write-Host "Downloading $($Spec.url)"
-            try {
-                Invoke-WebRequest -Uri $Spec.url -OutFile $temporary -UseBasicParsing
+            Write-Host "Downloading native ARM64 yq"
+            Invoke-WebRequest -Uri $Spec.url -OutFile $temporary -UseBasicParsing
+            $file = Get-Item -LiteralPath $temporary
+            $hash = (Get-FileHash -LiteralPath $temporary -Algorithm SHA256).Hash
+            if (
+                $file.Length -ne [int64]$Spec.bytes -or
+                $hash -ne $Spec.sha256
+            ) {
+                throw "Downloaded yq did not match its pinned size and SHA-256."
             }
-            catch {
-                $curl = Join-Path $env:SystemRoot "System32\curl.exe"
-                Assert-Arm64Pe -Path $curl -Name "Windows curl"
-                & $curl --fail --location --retry 3 --output $temporary $Spec.url
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Both PowerShell and native curl failed to download $($Spec.url)"
-                }
-            }
-            if (-not (Test-CheckedFile -Path $temporary -Spec $Spec)) {
-                throw "Downloaded file did not pass validation: $temporary"
-            }
-            Move-Item -LiteralPath $temporary -Destination $path
+            Move-Item -LiteralPath $temporary -Destination $Destination -Force
         }
         finally {
             if (Test-Path -LiteralPath $temporary) {
@@ -141,186 +105,156 @@ function Download-Checked {
             }
         }
     }
-    return $path
+    Assert-Arm64Pe -Path $Destination -Name "yq"
 }
 
-function Expand-VerifiedZip {
+function Install-WingetPackage {
     param(
-        [Parameter(Mandatory = $true)][string]$Archive,
-        [Parameter(Mandatory = $true)][string]$Destination,
-        [Parameter(Mandatory = $true)][string]$Sentinel,
-        [Parameter(Mandatory = $true)][string]$ExpectedArchiveSha256,
-        [Parameter(Mandatory = $true)][string]$ExpectedBinarySha256,
-        [Parameter(Mandatory = $true)][string]$Name
+        [Parameter(Mandatory = $true)][string]$Id,
+        [string]$Version,
+        [string]$Architecture
     )
-    $destinationFull = [System.IO.Path]::GetFullPath($Destination).TrimEnd("\")
-    $sentinelFull = [System.IO.Path]::GetFullPath($Sentinel)
-    if (-not $sentinelFull.StartsWith(
-        $destinationFull + "\",
-        [StringComparison]::OrdinalIgnoreCase
-    )) {
-        throw "$Name sentinel is outside its extraction directory."
-    }
-    $relativeSentinel = $sentinelFull.Substring($destinationFull.Length + 1)
-    $completionMarker = Join-Path $destinationFull ".archive-sha256"
-    $valid = (
-        (Test-Path -LiteralPath $sentinelFull -PathType Leaf) -and
-        (Test-Path -LiteralPath $completionMarker -PathType Leaf) -and
-        ((Get-Content -LiteralPath $completionMarker -Raw).Trim() -eq
-            $ExpectedArchiveSha256.ToLowerInvariant())
+    $arguments = @(
+        "install",
+        "--id", $Id,
+        "--exact",
+        "--source", "winget",
+        "--accept-package-agreements",
+        "--accept-source-agreements"
     )
-    if ($valid) {
-        $actual = (Get-FileHash -LiteralPath $sentinelFull -Algorithm SHA256).Hash.ToLowerInvariant()
-        $valid = $actual -eq $ExpectedBinarySha256.ToLowerInvariant()
+    if ($Version) {
+        $arguments += @("--version", $Version)
     }
-    if (-not $valid) {
-        $staging = "$destinationFull.installing-$([guid]::NewGuid().ToString('N'))"
-        try {
-            New-Item -ItemType Directory -Force -Path $staging | Out-Null
-            Expand-Archive -LiteralPath $Archive -DestinationPath $staging -Force
-            $stagingSentinel = Join-Path $staging $relativeSentinel
-            Assert-Arm64Pe -Path $stagingSentinel -Name $Name
-            Assert-FileHash -Path $stagingSentinel `
-                -ExpectedSha256 $ExpectedBinarySha256 -Name $Name
-            [System.IO.File]::WriteAllText(
-                (Join-Path $staging ".archive-sha256"),
-                $ExpectedArchiveSha256.ToLowerInvariant() + [Environment]::NewLine,
-                [System.Text.ASCIIEncoding]::new()
-            )
-            if (Test-Path -LiteralPath $destinationFull) {
-                Remove-Item -LiteralPath $destinationFull -Recurse -Force
-            }
-            Move-Item -LiteralPath $staging -Destination $destinationFull
-        }
-        finally {
-            if (Test-Path -LiteralPath $staging) {
-                Remove-Item -LiteralPath $staging -Recurse -Force
-            }
-        }
+    if ($Architecture) {
+        $arguments += @("--architecture", $Architecture)
     }
-    Assert-Arm64Pe -Path $sentinelFull -Name $Name
-    Assert-FileHash -Path $sentinelFull -ExpectedSha256 $ExpectedBinarySha256 -Name $Name
-}
-
-function Invoke-Git {
-    param(
-        [Parameter(Mandatory = $true)][string]$Git,
-        [Parameter(Mandatory = $true)][string[]]$Arguments,
-        [switch]$Capture
-    )
+    Write-Host "Installing $Id$(if ($Version) { " $Version" }) with Winget"
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = "Continue"
-        $output = @(& $Git @Arguments 2>&1)
+        & winget.exe @arguments
         $exitCode = $LASTEXITCODE
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
     }
     if ($exitCode -ne 0) {
-        throw "Git failed: git $($Arguments -join ' ')`n$($output -join "`n")"
-    }
-    if ($Capture) {
-        return ($output -join "`n").Trim()
+        throw "Winget failed to install $Id with exit code $exitCode."
     }
 }
 
-function Set-ExactCheckout {
-    param(
-        [Parameter(Mandatory = $true)][string]$Git,
-        [Parameter(Mandatory = $true)][string]$Destination,
-        [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$Commit
-    )
-    $gitDirectory = Join-Path $Destination ".git"
-    if (-not (Test-Path -LiteralPath $gitDirectory -PathType Container)) {
-        if (Test-Path -LiteralPath $Destination) {
-            $items = @(Get-ChildItem -LiteralPath $Destination -Force)
-            if ($items.Count -ne 0) {
-                throw "Checkout destination is not empty: $Destination"
-            }
-        }
-        else {
-            New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-        }
-        Invoke-Git -Git $Git -Arguments @("init", "--quiet", $Destination)
-        Invoke-Git -Git $Git -Arguments @("-C", $Destination, "remote", "add", "origin", $Url)
-    }
-    $localKeys = @(
-        (Invoke-Git -Git $Git -Arguments @(
-            "-C", $Destination, "config", "--local", "--name-only", "--list"
-        ) -Capture) -split "\r?\n" |
-        Where-Object { $_ }
-    )
-    $unsafeKeys = @($localKeys | Where-Object {
-        $_ -match '^(?i:include\.|includeif\.|url\.)' -or
-        $_ -eq "remote.origin.pushurl"
-    })
-    if ($unsafeKeys.Count -ne 0) {
-        throw "Unsafe local Git URL configuration in $Destination`: $($unsafeKeys -join ', ')"
-    }
-    $origins = @(
-        (Invoke-Git -Git $Git -Arguments @(
-            "-C", $Destination, "config", "--local", "--get-all", "remote.origin.url"
-        ) -Capture) -split "\r?\n" |
-        Where-Object { $_ }
-    )
-    if ($origins.Count -ne 1 -or $origins[0].TrimEnd("/") -ne $Url.TrimEnd("/")) {
-        throw "Unexpected raw origin for $Destination`: $($origins -join ', ')"
-    }
-    $effectiveOrigins = @(
-        (Invoke-Git -Git $Git -Arguments @(
-            "-C", $Destination, "remote", "get-url", "--all", "origin"
-        ) -Capture) -split "\r?\n" |
-        Where-Object { $_ }
-    )
-    if (
-        $effectiveOrigins.Count -ne 1 -or
-        $effectiveOrigins[0].TrimEnd("/") -ne $Url.TrimEnd("/")
-    ) {
-        throw "Unexpected effective origin for $Destination`: $($effectiveOrigins -join ', ')"
-    }
+function Test-WingetPackageInstalled {
+    param([Parameter(Mandatory = $true)][string]$Id)
     $previousErrorActionPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = "Continue"
-        & $Git -C $Destination cat-file -e "$Commit^{commit}" *> $null
-        $commitPresent = $LASTEXITCODE -eq 0
+        & winget.exe list --id $Id --exact --source winget `
+            --accept-source-agreements *> $null
+        return $LASTEXITCODE -eq 0
     }
     finally {
         $ErrorActionPreference = $previousErrorActionPreference
     }
-    if (-not $commitPresent) {
-        Write-Host "Fetching $([System.IO.Path]::GetFileName($Destination))@$Commit"
-        Invoke-Git -Git $Git -Arguments @(
-            "-C", $Destination, "fetch", "--force", "--no-tags", "--depth", "1", "origin", $Commit
-        )
-    }
-    Invoke-Git -Git $Git -Arguments @("-C", $Destination, "checkout", "--quiet", "--force", "--detach", $Commit)
-    Invoke-Git -Git $Git -Arguments @("-C", $Destination, "clean", "-ffdx")
-    $head = Invoke-Git -Git $Git -Arguments @("-C", $Destination, "rev-parse", "HEAD") -Capture
-    $status = Invoke-Git -Git $Git -Arguments @("-C", $Destination, "status", "--porcelain") -Capture
-    if ($head -ne $Commit -or $status) {
-        throw "Checkout is not exact and clean: $Destination"
-    }
 }
 
-function Copy-GitTrackedTree {
-    param(
-        [Parameter(Mandatory = $true)][string]$Git,
-        [Parameter(Mandatory = $true)][string]$Source,
-        [Parameter(Mandatory = $true)][string]$Destination
-    )
-    New-Item -ItemType Directory -Force -Path $Destination | Out-Null
-    $files = @(& $Git -C $Source ls-files)
-    if ($LASTEXITCODE -ne 0 -or $files.Count -eq 0) {
-        throw "Could not enumerate starter files."
+function Test-NvimMinimumVersion {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $version = Invoke-Native -FilePath $Path -Arguments @("--version") -Capture
+    if ($version -notmatch '(?m)^NVIM v(\d+)\.(\d+)\.(\d+)') {
+        return $false
     }
-    foreach ($relative in $files) {
-        $windowsRelative = $relative.Replace("/", "\")
-        $sourceFile = Join-Path $Source $windowsRelative
-        $destinationFile = Join-Path $Destination $windowsRelative
-        New-Item -ItemType Directory -Force -Path (Split-Path $destinationFile -Parent) | Out-Null
-        Copy-Item -LiteralPath $sourceFile -Destination $destinationFile -Force
+    $observed = [Version]::new(
+        [int]$Matches[1],
+        [int]$Matches[2],
+        [int]$Matches[3]
+    )
+    return $observed -ge [Version]::new(0, 12, 4)
+}
+
+function Update-ProcessPath {
+    $machine = [Environment]::GetEnvironmentVariable("Path", "Machine")
+    $user = [Environment]::GetEnvironmentVariable("Path", "User")
+    $env:Path = @($machine, $user) -join ";"
+}
+
+function Find-NativeTool {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string[]]$Candidates,
+        [switch]$Optional
+    )
+    foreach ($candidate in $Candidates) {
+        if (-not $candidate) {
+            continue
+        }
+        $resolved = $candidate
+        if (-not [System.IO.Path]::IsPathRooted($candidate)) {
+            $command = Get-Command $candidate -ErrorAction SilentlyContinue |
+                Select-Object -First 1
+            if (-not $command) {
+                continue
+            }
+            $resolved = $command.Source
+        }
+        if (Test-Path -LiteralPath $resolved -PathType Leaf) {
+            if ((Get-PeMachine -Path $resolved) -eq 0xAA64) {
+                return [System.IO.Path]::GetFullPath($resolved)
+            }
+        }
+    }
+    if ($Optional) {
+        return $null
+    }
+    throw "Could not find native ARM64 $Name."
+}
+
+function Read-ManagedMarker {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
+        return $null
+    }
+    return Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+}
+
+function Write-Utf8Json {
+    param(
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)]$Value
+    )
+    $json = $Value | ConvertTo-Json -Depth 10
+    [System.IO.File]::WriteAllText(
+        $Path,
+        $json + [Environment]::NewLine,
+        [System.Text.UTF8Encoding]::new($false)
+    )
+}
+
+function Invoke-IsolatedGit {
+    param(
+        [Parameter(Mandatory = $true)][scriptblock]$Action,
+        [Parameter(Mandatory = $true)][string]$EmptyConfig
+    )
+    $saved = @{}
+    Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } |
+        ForEach-Object { $saved[$_.Name] = $_.Value }
+    try {
+        Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } |
+            ForEach-Object {
+                Remove-Item -Path "Env:$($_.Name)" -ErrorAction SilentlyContinue
+            }
+        $env:GIT_CONFIG_GLOBAL = $EmptyConfig
+        $env:GIT_CONFIG_NOSYSTEM = "1"
+        $env:GIT_TERMINAL_PROMPT = "0"
+        & $Action
+    }
+    finally {
+        Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } |
+            ForEach-Object {
+                Remove-Item -Path "Env:$($_.Name)" -ErrorAction SilentlyContinue
+            }
+        foreach ($name in $saved.Keys) {
+            Set-Item -Path "Env:$name" -Value $saved[$name]
+        }
     }
 }
 
@@ -329,338 +263,296 @@ $processArch = [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchi
 if ($osArch -ne "Arm64" -or $processArch -ne "Arm64") {
     throw "This setup requires native ARM64 Windows PowerShell. OS=$osArch Process=$processArch"
 }
-if ($AppName -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]{0,47}$') {
-    throw "AppName must be 1-48 safe filename characters."
-}
 
 $repo = $PSScriptRoot
-$resolvedInstallRoot = [System.IO.Path]::GetFullPath($InstallRoot)
-$tools = Get-Content (Join-Path $repo "tools.json") -Raw | ConvertFrom-Json
 $manifest = Get-Content (Join-Path $repo "manifest.json") -Raw | ConvertFrom-Json
-$lock = Get-Content (Join-Path $repo "harness\lazy-lock-e2e.json") -Raw | ConvertFrom-Json
-$pluginSources = Get-Content (Join-Path $repo "fixtures\plugin-sources.json") -Raw | ConvertFrom-Json
-$arm64 = $tools.windows_arm64
-
-$downloads = Join-Path $resolvedInstallRoot "downloads"
-$toolRoot = Join-Path $resolvedInstallRoot "tools"
-$sourceRoot = Join-Path $resolvedInstallRoot "sources"
-$profileRoot = Join-Path $resolvedInstallRoot "profile"
-$configHome = Join-Path $profileRoot "xdg\config"
-$dataHome = Join-Path $profileRoot "xdg\data"
-$stateHome = Join-Path $profileRoot "xdg\state"
-$cacheHome = Join-Path $profileRoot "xdg\cache"
-$configDirectory = Join-Path $configHome $AppName
-$dataDirectory = Join-Path $dataHome "$AppName-data"
-$lazyRoot = Join-Path $dataDirectory "lazy"
+$tools = Get-Content (Join-Path $repo "tools.json") -Raw | ConvertFrom-Json
+$configDirectory = Join-Path $env:LOCALAPPDATA "nvim"
+$dataDirectory = Join-Path $env:LOCALAPPDATA "nvim-data"
+$supportRoot = Join-Path $env:LOCALAPPDATA "Programs\LazyVimARM64"
+$supportBin = Join-Path $supportRoot "bin"
+$yq = Join-Path $supportBin "yq.exe"
+$registryDirectory = Join-Path $supportRoot "mason-registry"
 $marker = Join-Path $configDirectory ".lazyvim-arm64-managed.json"
-$ownerMarker = Join-Path $resolvedInstallRoot ".lazyvim-arm64-owned.json"
-$utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+$emptyGitConfig = Join-Path $env:TEMP "lazyvim-arm64-empty-gitconfig"
+[System.IO.File]::WriteAllText($emptyGitConfig, "", [System.Text.ASCIIEncoding]::new())
+$programFiles = [Environment]::GetFolderPath(
+    [Environment+SpecialFolder]::ProgramFiles
+)
 
-$ownedInstall = Test-Path -LiteralPath $ownerMarker -PathType Leaf
-if ($ownedInstall) {
-    $owner = Get-Content -LiteralPath $ownerMarker -Raw -Encoding UTF8 | ConvertFrom-Json
-    if ($owner.app_name -ne $AppName -or $owner.install_root -ne $resolvedInstallRoot) {
-        throw "The install root is managed by a different LazyVim ARM64 profile."
+$managed = Read-ManagedMarker -Path $marker
+if ($ResetProfile) {
+    if (-not $managed) {
+        throw "Refusing to reset an unmanaged Neovim profile: $configDirectory"
+    }
+    Remove-Item -LiteralPath $configDirectory -Recurse -Force
+    if (Test-Path -LiteralPath $dataDirectory) {
+        Remove-Item -LiteralPath $dataDirectory -Recurse -Force
+    }
+    $managed = $null
+}
+if ((Test-Path -LiteralPath $configDirectory) -and -not $managed) {
+    $entries = @(Get-ChildItem -LiteralPath $configDirectory -Force)
+    if ($entries.Count -ne 0) {
+        throw @"
+An existing unmanaged Neovim profile is present at:
+  $configDirectory
+Back it up or remove it before running this setup. Nothing was changed.
+"@
+    }
+    Remove-Item -LiteralPath $configDirectory -Force
+}
+if ((Test-Path -LiteralPath $dataDirectory) -and -not $managed) {
+    $entries = @(Get-ChildItem -LiteralPath $dataDirectory -Force)
+    if ($entries.Count -ne 0) {
+        throw @"
+Existing unmanaged Neovim data is present at:
+  $dataDirectory
+Back it up or remove it before running this setup. Nothing was changed.
+"@
     }
 }
-$managedProfile = Test-Path -LiteralPath $marker -PathType Leaf
-if ($managedProfile) {
-    $profileOwner = Get-Content -LiteralPath $marker -Raw -Encoding UTF8 | ConvertFrom-Json
-    if (
-        $profileOwner.app_name -ne $AppName -or
-        $profileOwner.install_root -ne $resolvedInstallRoot
-    ) {
-        throw "The profile marker does not match this setup request."
+
+if (-not $SkipPackages) {
+    if (-not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+        throw "Winget is required to install native ARM64 prerequisites."
+    }
+    Update-ProcessPath
+    $installedNvim = Find-NativeTool -Name "Neovim" -Optional -Candidates @(
+        (Join-Path $programFiles "Neovim\bin\nvim.exe"),
+        "nvim.exe"
+    )
+    if (-not $installedNvim -or -not (Test-NvimMinimumVersion -Path $installedNvim)) {
+        Install-WingetPackage -Id "Neovim.Neovim" -Version "0.12.4" -Architecture "arm64"
+    }
+    $installedGit = Find-NativeTool -Name "Git" -Optional -Candidates @(
+        (Join-Path $programFiles "Git\cmd\git.exe"),
+        "git.exe"
+    )
+    if (-not $installedGit) {
+        Install-WingetPackage -Id "Git.Git" -Architecture "arm64"
+    }
+    if (-not $SkipFont -and -not (Test-WingetPackageInstalled -Id "DEVCOM.JetBrainsMonoNerdFont")) {
+        Install-WingetPackage -Id "DEVCOM.JetBrainsMonoNerdFont"
+    }
+    if ($InstallCompiler) {
+        $installedCompiler = Find-NativeTool -Name "Clang" -Optional -Candidates @(
+            (Join-Path $programFiles "LLVM\bin\clang.exe"),
+            "clang.exe"
+        )
+        if (-not $installedCompiler) {
+            Install-WingetPackage -Id "LLVM.LLVM" -Architecture "arm64"
+        }
+    }
+    Update-ProcessPath
+}
+
+$nvim = Find-NativeTool -Name "Neovim" -Candidates @(
+    (Join-Path $programFiles "Neovim\bin\nvim.exe"),
+    "nvim.exe"
+)
+$git = Find-NativeTool -Name "Git" -Candidates @(
+    (Join-Path $programFiles "Git\cmd\git.exe"),
+    "git.exe"
+)
+$compiler = Find-NativeTool -Name "Clang" -Optional -Candidates @(
+    (Join-Path $programFiles "LLVM\bin\clang.exe"),
+    "clang.exe"
+)
+Assert-Arm64Pe -Path $nvim -Name "Neovim"
+Assert-Arm64Pe -Path $git -Name "Git"
+Download-Checked -Spec $tools.windows_arm64.yq -Destination $yq
+
+if (-not (Test-NvimMinimumVersion -Path $nvim)) {
+    $nvimVersion = Invoke-Native -FilePath $nvim -Arguments @("--version") -Capture
+    throw "LazyVim ARM64 requires Neovim 0.12.4 or newer; found:`n$nvimVersion"
+}
+$gitBuild = Invoke-Native -FilePath $git -Arguments @("--version", "--build-options") -Capture
+if ($gitBuild -notmatch '(?im)^cpu:\s*aarch64$') {
+    throw "Git did not report a native aarch64 build."
+}
+
+$freshProfile = -not (Test-Path -LiteralPath $configDirectory)
+if ($freshProfile) {
+    Write-Host "Creating the standard LazyVim starter profile"
+    $staging = "$configDirectory.installing-$([guid]::NewGuid().ToString('N'))"
+    try {
+        Invoke-IsolatedGit -EmptyConfig $emptyGitConfig -Action {
+            Invoke-Native -FilePath $git -Arguments @(
+                "clone",
+                "--filter=blob:none",
+                "--single-branch",
+                "--branch", "main",
+                "https://github.com/LazyVim/starter.git",
+                $staging
+            )
+        }
+        Remove-Item -LiteralPath (Join-Path $staging ".git") -Recurse -Force
+        Copy-Item -LiteralPath (Join-Path $repo "harness\lazy-lock-e2e.json") `
+            -Destination (Join-Path $staging "lazy-lock.json")
+        Move-Item -LiteralPath $staging -Destination $configDirectory
+        Write-Utf8Json -Path $marker -Value ([ordered]@{
+            schema_version = 2
+            state = "installing"
+            config = $configDirectory
+            data = $dataDirectory
+        })
+    }
+    finally {
+        if (Test-Path -LiteralPath $staging) {
+            Remove-Item -LiteralPath $staging -Recurse -Force
+        }
     }
 }
-if ($ResetProfile -and (Test-Path -LiteralPath $profileRoot)) {
-    if (-not ($ownedInstall -or $managedProfile)) {
-        throw "Refusing to reset an unmanaged profile: $profileRoot"
+
+$registryUrl = "https://github.com/$($manifest.components.'mason-registry'.repository).git"
+$registryCommit = $manifest.components."mason-registry".e2e_commit
+Write-Host "Preparing the native ARM64 Mason registry"
+Invoke-IsolatedGit -EmptyConfig $emptyGitConfig -Action {
+    if (-not (Test-Path -LiteralPath (Join-Path $registryDirectory ".git"))) {
+        if (Test-Path -LiteralPath $registryDirectory) {
+            Remove-Item -LiteralPath $registryDirectory -Recurse -Force
+        }
+        $registryStaging = "$registryDirectory.installing-$([guid]::NewGuid().ToString('N'))"
+        try {
+            Invoke-Native -FilePath $git -Arguments @(
+                "clone",
+                "--filter=blob:none",
+                "--no-checkout",
+                $registryUrl,
+                $registryStaging
+            )
+            Invoke-Native -FilePath $git -Arguments @(
+                "-C", $registryStaging,
+                "checkout", "--quiet", "--force", "--detach", $registryCommit
+            )
+            Move-Item -LiteralPath $registryStaging -Destination $registryDirectory
+        }
+        finally {
+            if (Test-Path -LiteralPath $registryStaging) {
+                Remove-Item -LiteralPath $registryStaging -Recurse -Force
+            }
+        }
     }
-    Remove-Item -LiteralPath $profileRoot -Recurse -Force
-}
-if (
-    (Test-Path -LiteralPath $configDirectory) -and
-    -not (Test-Path -LiteralPath $marker -PathType Leaf)
-) {
-    $items = @(Get-ChildItem -LiteralPath $configDirectory -Force)
-    if ($items.Count -ne 0 -and -not $ownedInstall) {
-        throw "Refusing to modify an unmanaged profile: $configDirectory"
+    $origin = Invoke-Native -FilePath $git -Arguments @(
+        "-C", $registryDirectory,
+        "config", "--local", "--get", "remote.origin.url"
+    ) -Capture
+    if ($origin.TrimEnd("/") -ne $registryUrl.TrimEnd("/")) {
+        throw "The local Mason registry has an unexpected origin: $origin"
     }
-    if ($ownedInstall) {
-        Remove-Item -LiteralPath $configDirectory -Recurse -Force
-    }
-}
-New-Item -ItemType Directory -Force -Path (
-    $downloads, $toolRoot, $sourceRoot, $configHome, $dataHome, $stateHome, $cacheHome, $lazyRoot
-) | Out-Null
-if (-not $ownedInstall) {
-    $ownerJson = [ordered]@{
-        schema_version = 1
-        app_name = $AppName
-        install_root = $resolvedInstallRoot
-    } | ConvertTo-Json
-    [System.IO.File]::WriteAllText(
-        $ownerMarker,
-        $ownerJson + [Environment]::NewLine,
-        $utf8NoBom
+    Invoke-Native -FilePath $git -Arguments @(
+        "-C", $registryDirectory,
+        "fetch", "--quiet", "--force", "--no-tags", "origin", $registryCommit
+    )
+    Invoke-Native -FilePath $git -Arguments @(
+        "-C", $registryDirectory,
+        "checkout", "--quiet", "--force", "--detach", $registryCommit
+    )
+    Invoke-Native -FilePath $git -Arguments @(
+        "-C", $registryDirectory,
+        "clean", "-ffdx"
     )
 }
 
-$gitArchive = Download-Checked -Spec $arm64.git -Directory $downloads
-$gitRoot = Join-Path $toolRoot "mingit-$($arm64.git.version)"
-$git = Join-Path $gitRoot "cmd\git.exe"
-Expand-VerifiedZip -Archive $gitArchive -Destination $gitRoot -Sentinel $git `
-    -ExpectedArchiveSha256 $arm64.git.sha256 `
-    -ExpectedBinarySha256 $arm64.git.binary_sha256 -Name "Git"
-$gitBuild = (& $git --version --build-options) -join "`n"
-if ($LASTEXITCODE -ne 0 -or $gitBuild -notmatch 'cpu:\s*aarch64') {
-    throw "Provisioned Git did not report an aarch64 build."
-}
-
-$nvimArchive = Download-Checked -Spec $arm64.neovim -Directory $downloads
-$nvimRoot = Join-Path $toolRoot "neovim-$($arm64.neovim.version)"
-$nvim = Join-Path $nvimRoot "nvim-win-arm64\bin\nvim.exe"
-Expand-VerifiedZip -Archive $nvimArchive -Destination $nvimRoot -Sentinel $nvim `
-    -ExpectedArchiveSha256 $arm64.neovim.sha256 `
-    -ExpectedBinarySha256 $arm64.neovim.binary_sha256 -Name "Neovim"
-$foreignYank = Join-Path $nvimRoot "nvim-win-arm64\bin\win32yank.exe"
-if (Test-Path -LiteralPath $foreignYank) {
-    Remove-Item -LiteralPath $foreignYank -Force
-}
-
-$llvmArchive = Download-Checked -Spec $arm64.llvm_mingw -Directory $downloads
-$llvmRoot = Join-Path $toolRoot "llvm-mingw-$($arm64.llvm_mingw.version)"
-$compilerRelative = (
-    "llvm-mingw-$($arm64.llvm_mingw.version)-ucrt-aarch64" +
-    "\bin\aarch64-w64-mingw32-gcc.exe"
-)
-$compiler = Join-Path $llvmRoot $compilerRelative
-Expand-VerifiedZip -Archive $llvmArchive -Destination $llvmRoot -Sentinel $compiler `
-    -ExpectedArchiveSha256 $arm64.llvm_mingw.sha256 `
-    -ExpectedBinarySha256 $arm64.llvm_mingw.binary_sha256 -Name "LLVM-MinGW compiler"
-$compilerBin = Split-Path $compiler -Parent
-
-$yqDownload = Download-Checked -Spec $arm64.yq -Directory $downloads
-$supportRoot = Join-Path $toolRoot "yq-$($arm64.yq.version)"
-$yq = Join-Path $supportRoot "yq.exe"
-New-Item -ItemType Directory -Force -Path $supportRoot | Out-Null
-Copy-Item -LiteralPath $yqDownload -Destination $yq -Force
-Assert-Arm64Pe -Path $yq -Name "yq"
-Assert-FileHash -Path $yq -ExpectedSha256 $arm64.yq.sha256 -Name "yq"
-
-$gitEnvironment = @{}
-Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } | ForEach-Object {
-    $gitEnvironment[$_.Name] = $_.Value
-}
-$emptyGitConfig = Join-Path $resolvedInstallRoot ".empty-gitconfig"
-[System.IO.File]::WriteAllText($emptyGitConfig, "", [System.Text.ASCIIEncoding]::new())
-try {
-    Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } | ForEach-Object {
-        Remove-Item -Path "Env:$($_.Name)" -ErrorAction SilentlyContinue
-    }
-    $env:GIT_CONFIG_GLOBAL = $emptyGitConfig
-    $env:GIT_CONFIG_NOSYSTEM = "1"
-    $env:GIT_TERMINAL_PROMPT = "0"
-    $starterCommit = "803bc181d7c0d6d5eeba9274d9be49b287294d99"
-    $starterSource = Join-Path $sourceRoot "starter"
-    Set-ExactCheckout -Git $git -Destination $starterSource `
-        -Url "https://github.com/LazyVim/starter.git" -Commit $starterCommit
-
-    if (-not (Test-Path -LiteralPath $marker -PathType Leaf)) {
-        Copy-GitTrackedTree -Git $git -Source $starterSource -Destination $configDirectory
-    }
-    Copy-Item -LiteralPath (Join-Path $repo "harness\lazy-lock-e2e.json") `
-        -Destination (Join-Path $configDirectory "lazy-lock.json") -Force
-
-    $lazyConfig = Join-Path $configDirectory "lua\config\lazy.lua"
-    $lazyText = Get-Content -LiteralPath $lazyConfig -Raw
-    $checkerLine = "enabled = true, -- check for plugin updates periodically"
-    if ($lazyText.Contains($checkerLine)) {
-        $lazyText = $lazyText.Replace(
-            $checkerLine,
-            "enabled = false, -- pinned ARM64 profile; update manually"
-        )
-        [System.IO.File]::WriteAllText($lazyConfig, $lazyText, $utf8NoBom)
-    }
-
-    $arm64Plugin = Join-Path $configDirectory "lua\plugins\windows-arm64.lua"
-    $pluginText = @"
+$pluginDirectory = Join-Path $configDirectory "lua\plugins"
+Write-Host "Applying the Windows ARM64 LazyVim overrides"
+New-Item -ItemType Directory -Force -Path $pluginDirectory | Out-Null
+$overridePath = Join-Path $pluginDirectory "windows-arm64.lua"
+$override = @"
 return {
   {
     "LazyVim/LazyVim",
     branch = "$($manifest.components.lazyvim.branch)",
+    commit = "$($manifest.components.lazyvim.commit)",
     url = "https://github.com/$($manifest.components.lazyvim.repository).git",
   },
   {
     "nvim-treesitter/nvim-treesitter",
     branch = "$($manifest.components.'nvim-treesitter'.branch)",
+    commit = "$($manifest.components.'nvim-treesitter'.commit)",
     url = "https://github.com/$($manifest.components.'nvim-treesitter'.repository).git",
   },
   {
     "mason-org/mason.nvim",
     opts = function(_, opts)
       opts.registries = {
-        "github:$($manifest.components.'mason-registry'.repository)@$($manifest.components.'mason-registry'.e2e_commit)",
+        "file:`$LOCALAPPDATA/Programs/LazyVimARM64/mason-registry",
       }
     end,
   },
 }
 "@
-    [System.IO.File]::WriteAllText($arm64Plugin, $pluginText, $utf8NoBom)
+[System.IO.File]::WriteAllText(
+    $overridePath,
+    $override,
+    [System.Text.UTF8Encoding]::new($false)
+)
 
-    $sourceMap = @{}
-    $pluginSources.PSObject.Properties | ForEach-Object {
-        $sourceMap[$_.Name] = [string]$_.Value
-    }
-    $sourceMap["LazyVim"] = "https://github.com/$($manifest.components.lazyvim.repository).git"
-    $sourceMap["nvim-treesitter"] = "https://github.com/$($manifest.components.'nvim-treesitter'.repository).git"
-    foreach ($property in $lock.PSObject.Properties | Sort-Object Name) {
-        $name = $property.Name
-        $entry = $property.Value
-        if (-not $sourceMap.ContainsKey($name)) {
-            throw "No repository mapping exists for $name."
-        }
-        Set-ExactCheckout -Git $git -Destination (Join-Path $lazyRoot $name) `
-            -Url $sourceMap[$name] -Commit $entry.commit
-    }
+$optionsPath = Join-Path $configDirectory "lua\config\options.lua"
+$options = Get-Content -LiteralPath $optionsPath -Raw
+if ($options -notmatch '(?m)^vim\.g\.have_nerd_font\s*=') {
+    $options += "`nvim.g.have_nerd_font = true`n"
 }
-finally {
-    Get-ChildItem Env: | Where-Object { $_.Name -like "GIT_*" } | ForEach-Object {
-        Remove-Item -Path "Env:$($_.Name)" -ErrorAction SilentlyContinue
-    }
-    foreach ($name in $gitEnvironment.Keys) {
-        Set-Item -Path "Env:$name" -Value $gitEnvironment[$name]
-    }
-}
+if ($options -notmatch 'LazyVimARM64/bin') {
+    $options += @"
 
-$rootPrefix = $resolvedInstallRoot.TrimEnd("\") + "\"
-$relativePaths = @{}
-$managedPaths = [ordered]@{
-    nvim = $nvim
-    nvim_bin = (Split-Path $nvim -Parent)
-    git_bin = (Split-Path $git -Parent)
-    git_helpers = (Join-Path $gitRoot "clangarm64\bin")
-    compiler_bin = $compilerBin
-    support = $supportRoot
-}
-foreach ($item in $managedPaths.GetEnumerator()) {
-    if (-not $item.Value.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Managed path is outside the install root: $($item.Value)"
-    }
-    $relative = $item.Value.Substring($rootPrefix.Length)
-    if ($relative -match '[^\x00-\x7F]') {
-        throw "Managed launcher path must be ASCII relative to the install root: $relative"
-    }
-    $relativePaths[$item.Key] = $relative
-}
-$launcher = Join-Path $resolvedInstallRoot "lazyvim-arm64.cmd"
-$launcherText = @"
-@ECHO off
-SETLOCAL
-SET "LVB_ROOT=%~dp0"
-SET "NVIM_APPNAME=$AppName"
-SET "XDG_CONFIG_HOME=%LVB_ROOT%profile\xdg\config"
-SET "XDG_DATA_HOME=%LVB_ROOT%profile\xdg\data"
-SET "XDG_STATE_HOME=%LVB_ROOT%profile\xdg\state"
-SET "XDG_CACHE_HOME=%LVB_ROOT%profile\xdg\cache"
-SET "PATH=%LVB_ROOT%$($relativePaths.nvim_bin);%LVB_ROOT%$($relativePaths.git_bin);%LVB_ROOT%$($relativePaths.git_helpers);%LVB_ROOT%$($relativePaths.compiler_bin);%LVB_ROOT%$($relativePaths.support);%PATH%"
-"%LVB_ROOT%$($relativePaths.nvim)" %*
-EXIT /b %ERRORLEVEL%
+local arm64_bin = vim.fn.expand("`$LOCALAPPDATA/Programs/LazyVimARM64/bin")
+vim.env.PATH = arm64_bin .. ";" .. vim.env.PATH
 "@
-[System.IO.File]::WriteAllText($launcher, $launcherText, [System.Text.ASCIIEncoding]::new())
+}
+if ($compiler -and $options -notmatch '(?m)^local arm64_compiler_bin\s*=') {
+    $compilerBinJson = (Split-Path $compiler -Parent) | ConvertTo-Json -Compress
+    $options += @"
+
+local arm64_compiler_bin = $compilerBinJson
+vim.env.PATH = arm64_compiler_bin .. ";" .. vim.env.PATH
+"@
+}
+[System.IO.File]::WriteAllText(
+    $optionsPath,
+    $options,
+    [System.Text.UTF8Encoding]::new($false)
+)
 
 $receipt = [ordered]@{
-    schema_version = 1
-    app_name = $AppName
+    schema_version = 2
     installed_at = [DateTimeOffset]::UtcNow.ToString("o")
-    install_root = $resolvedInstallRoot
-    launcher = $launcher
-    profile = [ordered]@{
-        config = $configDirectory
-        data = $dataDirectory
-    }
+    config = $configDirectory
+    data = $dataDirectory
+    command = "nvim"
+    architecture = "arm64"
     components = [ordered]@{
-        lazyvim = $manifest.components.lazyvim.commit
+        lazyvim_branch = $manifest.components.lazyvim.branch
+        lazyvim_commit = $manifest.components.lazyvim.commit
         mason_registry = $manifest.components."mason-registry".e2e_commit
-        neovim = $arm64.neovim.version
-        nvim_treesitter = $manifest.components."nvim-treesitter".commit
-        plugins = @($lock.PSObject.Properties).Count
-        yq = $arm64.yq.version
+        nvim_treesitter_branch = $manifest.components."nvim-treesitter".branch
+        nvim_treesitter_commit = $manifest.components."nvim-treesitter".commit
     }
-    native_tools = @(
-        [ordered]@{ name = "nvim"; path = $nvim; sha256 = $arm64.neovim.binary_sha256 },
-        [ordered]@{ name = "git"; path = $git; sha256 = $arm64.git.binary_sha256 },
-        [ordered]@{ name = "compiler"; path = $compiler; sha256 = $arm64.llvm_mingw.binary_sha256 },
-        [ordered]@{ name = "yq"; path = $yq; sha256 = $arm64.yq.sha256 }
-    )
+    tools = [ordered]@{
+        compiler = $compiler
+        git = $git
+        neovim = $nvim
+        yq = $yq
+    }
+    registry = $registryDirectory
 }
-$receiptPath = Join-Path $resolvedInstallRoot "setup-receipt.json"
-$receiptJson = $receipt | ConvertTo-Json -Depth 10
-[System.IO.File]::WriteAllText(
-    $receiptPath,
-    $receiptJson + [Environment]::NewLine,
-    $utf8NoBom
-)
-[System.IO.File]::WriteAllText(
-    $marker,
-    $receiptJson + [Environment]::NewLine,
-    $utf8NoBom
-)
-
-if (-not $NoPath) {
-    $environmentKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey(
-        "Environment",
-        $true
-    )
-    if (-not $environmentKey) {
-        throw "Could not open the user environment registry key."
-    }
-    try {
-        $pathExists = @($environmentKey.GetValueNames()) -contains "Path"
-        if ($pathExists) {
-            $rawUserPath = [string]$environmentKey.GetValue(
-                "Path",
-                "",
-                [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames
-            )
-            $pathKind = $environmentKey.GetValueKind("Path")
-            if ($pathKind -notin @(
-                [Microsoft.Win32.RegistryValueKind]::String,
-                [Microsoft.Win32.RegistryValueKind]::ExpandString
-            )) {
-                throw "The user PATH has an unsupported registry value type: $pathKind"
-            }
-        }
-        else {
-            $rawUserPath = ""
-            $pathKind = [Microsoft.Win32.RegistryValueKind]::ExpandString
-        }
-        $segments = @($rawUserPath -split ";" | Where-Object { $_ })
-        if (-not ($segments | Where-Object {
-            $_.TrimEnd("\") -ieq $resolvedInstallRoot.TrimEnd("\")
-        })) {
-            $updatedPath = (@($resolvedInstallRoot) + $segments) -join ";"
-            $environmentKey.SetValue("Path", $updatedPath, $pathKind)
-        }
-    }
-    finally {
-        $environmentKey.Dispose()
-    }
-    Send-EnvironmentChanged
-    $env:Path = "$resolvedInstallRoot;$env:Path"
-}
+Write-Utf8Json -Path $marker -Value $receipt
+Write-Utf8Json -Path (Join-Path $configDirectory "lazyvim-arm64-receipt.json") `
+    -Value $receipt
 
 Write-Host ""
-Write-Host "LazyVim ARM64 is ready."
-Write-Host "  Command: lazyvim-arm64"
-Write-Host "  Profile: $configDirectory"
-Write-Host "  Receipt: $receiptPath"
+Write-Host "LazyVim ARM64 is configured in the standard Windows profile."
+Write-Host "  Command: nvim"
+Write-Host "  Config:  $configDirectory"
 Write-Host ""
-if (-not $NoPath) {
-    Write-Host "Open a new terminal to use the command from PATH."
+if (-not $SkipFont) {
+    Write-Host "Set Windows Terminal's font face to 'JetBrainsMono Nerd Font'."
+}
+if (-not $InstallCompiler) {
+    Write-Host "If no native compiler is already installed, rerun with -InstallCompiler before adding parsers."
 }
 
 if (-not $NoLaunch) {
-    & $launcher
+    & $nvim
 }
