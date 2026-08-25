@@ -141,6 +141,10 @@ the four expected missing-target failures. Exact commands, pins, metrics,
 exclusions, and evidence paths are in
 [`reference/ARM64_RESULTS.md`](reference/ARM64_RESULTS.md).
 
+The complete accepted control, Windows fork, and WSL evidence is preserved
+off-device with per-file checksums in the
+[`arm64-e2e-20260818` release](https://github.com/crutkas/lazyvim-arm64-e2e/releases/tag/arm64-e2e-20260818).
+
 ## x64-only portable regression
 
 `test.ps1` is x64-only. It must not be used as evidence that ARM64 binaries

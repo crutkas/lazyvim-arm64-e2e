@@ -116,9 +116,20 @@ seconds. Neither value measures normal online plugin installation because the
   hash-verified archive, input checkout, Git trace, and runner receipts.
 - `../out/wsl-a64-fork-20260818-10-wsl-wrapper.log`: Windows-side wrapper log.
 
-`out/` is intentionally ignored by Git. The unique local directories above
-remain the authoritative raw evidence and were not copied over historical
-reference artifacts.
+`out/` is intentionally ignored by Git. Sanitized copies of every file in the
+accepted directories are durable in the
+[`arm64-e2e-20260818` release](https://github.com/crutkas/lazyvim-arm64-e2e/releases/tag/arm64-e2e-20260818):
+
+| Release asset | Evidence files | SHA-256 |
+|---|---:|---|
+| `windows-arm64-control-evidence-20260818.zip` | 18 | `442559b3692f229c5a7b44aa2f47251731d1adf4c699bbeaf6a31fd17dad5c17` |
+| `windows-arm64-fork-evidence-20260818.zip` | 54 | `1c27ec1cf55b04f54ad0329f4fafe0daee0c3baefe056c17105c3cacb0ae00f5` |
+| `wsl2-arm64-regression-evidence-20260818.zip` | 53 | `3f708cd1eedbabceb27dd54b8a225c114787d1dcdd8f93b4aa2abb27139e0006` |
+
+`evidence-manifest.json` records the SHA-256 and byte count of every archived
+file. Sanitization replaces only the machine-local worktree and user-profile
+path prefixes with `<REPO>` and `<USERPROFILE>`; it does not change timings,
+commands, hashes, architecture records, Git events, receipts, or results.
 
 ### Exclusions and limitations
 
